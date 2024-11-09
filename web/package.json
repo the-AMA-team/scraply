@@ -13,6 +13,8 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@prisma/client": "^5.21.1",
     "axios": "^1.7.7",
+    "firebase": "^11.0.1",
+    "firebaseui": "^6.1.0",
     "next": "15.0.3",
     "prisma": "^5.22.0",
     "react": "^18.2.0",

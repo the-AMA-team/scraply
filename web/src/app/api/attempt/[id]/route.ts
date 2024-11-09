@@ -28,3 +28,4 @@ export const GET = async (req: NextRequest, {params} : any) => {
       return NextResponse.json({ error: error.message || "An unexpected error occurred"}, {status: 500});
     }
   }
+  
