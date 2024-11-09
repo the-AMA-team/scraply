@@ -31,21 +31,27 @@ export const POST = async (req: NextRequest) => {
           createMany: {
             data: [
               {
-                archetecture: {},
+                archetecture: "",
                 lastLoss: -1,
                 level: "L1",
                 rating: -1,
               },
               {
-                archetecture: {},
+                archetecture: "",
                 lastLoss: -1,
                 level: "L2",
                 rating: -1,
               },
               {
-                archetecture: {},
+                archetecture: "",
                 lastLoss: -1,
                 level: "L3",
+                rating: -1,
+              },
+              {
+                archetecture: "",
+                lastLoss: -1,
+                level: "L4",
                 rating: -1,
               },
             ],
