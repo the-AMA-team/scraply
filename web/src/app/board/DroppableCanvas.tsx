@@ -15,7 +15,7 @@ const DroppableCanvas = ({ blocks }: { blocks: Block[] }) => {
   return (
     <div
       ref={setNodeRef}
-      className="flex h-full border-2 border-dashed border-zinc-600 p-8 bg-zinc-900 whitespace-nowrap z-10"
+      className="flex h-full border-2 border-dashed border-zinc-600 p-8 px-28 bg-zinc-900 whitespace-nowrap z-10 items-center"
     >
       <SortableContext
         items={blocks.map((block: Block) => block.id)}
@@ -28,6 +28,7 @@ const DroppableCanvas = ({ blocks }: { blocks: Block[] }) => {
             label={block.label}
             color={block.color}
             activationFunction={block.activationFunction}
+            neurons={block.neurons}
           />
         ))}
       </SortableContext>

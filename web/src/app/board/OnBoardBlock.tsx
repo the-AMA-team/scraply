@@ -13,14 +13,28 @@ const OnBoardBlock = ({ id, label, color }: OnBoardBlockProps) => {
   const { canvasBlocks, setCanvasBlocks } = useArchitecture()!;
   return (
     <div
-      className={`px-8 py-20 rounded-2xl text-center ring-1 ring-zinc-100 mr-1`}
+      className={`px-10 py-20 rounded-2xl text-center ring-1 ring-zinc-100 mr-1 cursor-grab`}
       style={{ backgroundColor: color }}
     >
+      <input
+        className="text-zinc-900 text-center w-10 h-8 rounded-md outline-none"
+        type="number"
+        value={canvasBlocks.find((block) => block.id === id)?.neurons}
+        onChange={(e) => {
+          const newNeurons = parseInt(e.target.value);
+          if (newNeurons < 1) return;
+          setCanvasBlocks((prevBlocks) =>
+            prevBlocks.map((block) =>
+              block.id === id ? { ...block, neurons: newNeurons } : block
+            )
+          );
+        }}
+      />
       <div className="text-xl font-medium">{label}</div>
       <div className="relative overflow-visible flex">
         <div>
           <select
-            className="h-16 w-16 rounded-full text-zinc-900 outline-none absolute right-[-65px] top-[-20px] text-sm"
+            className="h-16 w-16 rounded-full text-zinc-900 outline-none absolute right-[-75px] top-[-20px] text-sm cursor-pointer"
             value={
               canvasBlocks.find((block) => block.id === id)
                 ?.activationFunction as string
@@ -34,7 +48,7 @@ const OnBoardBlock = ({ id, label, color }: OnBoardBlockProps) => {
                     : block
                 )
               );
-              console.log(setCanvasBlocks);
+              console.log(canvasBlocks);
             }}
           >
             <option value="ReLU">ReLU</option>
