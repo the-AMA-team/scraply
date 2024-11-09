@@ -2,7 +2,7 @@
 import { Block } from "@/types";
 import { useDraggable } from "@dnd-kit/core";
 
-const DraggableBlock = ({ id, label }: Block) => {
+const DraggableBlock = ({ id, label, color }: Block) => {
   const { active, attributes, listeners, setNodeRef, transform } = useDraggable(
     {
       id,
@@ -16,10 +16,11 @@ const DraggableBlock = ({ id, label }: Block) => {
         transform: transform
           ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
           : "",
+        backgroundColor: color,
       }}
       {...listeners}
       {...attributes}
-      className={`p-8 m-4 bg-zinc-800 rounded-md text-center cursor-grab ${
+      className={`p-8 m-4 rounded-2xl text-center cursor-grab ${
         active?.id == id && "opacity-0"
       }`}
     >

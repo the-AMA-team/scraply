@@ -80,15 +80,17 @@ const ScratchLikeEditor = () => {
       <div className="flex gap-20 p-20">
         {/* Toolbox area */}
         <div className="w-[150px]">
-          <h3>Blocks</h3>
-          {initialBlocks.map((block) => (
-            <DraggableBlock
-              key={block.id}
-              id={block.id}
-              label={block.label}
-              color={block.color}
-            />
-          ))}
+          <h3>Layers</h3>
+          <div className="bg-zinc-800 py-1 rounded-lg">
+            {initialBlocks.map((block) => (
+              <DraggableBlock
+                key={block.id}
+                id={block.id}
+                label={block.label}
+                color={block.color}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Canvas area */}
