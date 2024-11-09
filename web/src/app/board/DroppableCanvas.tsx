@@ -27,6 +27,7 @@ const DroppableCanvas = ({ blocks }: { blocks: Block[] }) => {
             id={block.id}
             label={block.label}
             color={block.color}
+            activationFunction={block.activationFunction}
           />
         ))}
       </SortableContext>

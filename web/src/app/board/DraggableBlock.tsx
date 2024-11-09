@@ -2,7 +2,7 @@
 import { Block } from "@/types";
 import { useDraggable } from "@dnd-kit/core";
 
-const DraggableBlock = ({ id, label, color }: Block) => {
+const DraggableBlock = ({ id, label, color, activationFunction: _ }: Block) => {
   const { active, attributes, listeners, setNodeRef, transform } = useDraggable(
     {
       id,
