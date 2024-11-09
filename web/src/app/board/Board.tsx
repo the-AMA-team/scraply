@@ -194,7 +194,7 @@ const ScratchLikeEditor = () => {
         {/* Toolbox area */}
         <div className="w-36">
           <h3>Layers</h3>
-          <div className="bg-zinc-800 py-1 rounded-lg">
+          <div className="bg-zinc-800 py-1 rounded-xl">
             {initialBlocks.map((block) => (
               <DraggableBlock
                 key={block.id}
@@ -216,12 +216,11 @@ const ScratchLikeEditor = () => {
 
         <div className="">
           <h3>Run</h3>
-          <div className="bg-zinc-800 py-1 rounded-lg p-1 text-sm">
-            <div>Loss: </div>
-            <div className="flex">
+          <div className="bg-zinc-800 py-1 rounded-lg p-1 text-sm px-2">
+            <div className="flex my-1">
               Loss:{" "}
               <select
-                className="text-zinc-900 outline-none text-sm cursor-pointer mx-1"
+                className="text-white bg-zinc-700 p-1 rounded outline-none text-sm cursor-pointer mx-1"
                 value={loss}
                 onChange={(e) => setLoss(e.target.value)}
               >
@@ -229,10 +228,10 @@ const ScratchLikeEditor = () => {
                 <option value="CrossEntropy">CrossEntropy</option>
               </select>
             </div>
-            <div className="flex">
+            <div className="flex my-1">
               Optimizer:{" "}
               <select
-                className="text-zinc-900 outline-none text-sm cursor-pointer mx-1"
+                className="text-white bg-zinc-700 p-1 rounded outline-none text-sm cursor-pointer mx-1"
                 value={optimizer}
                 onChange={(e) => setOptimizer(e.target.value)}
               >
@@ -242,20 +241,20 @@ const ScratchLikeEditor = () => {
                 <option value="RMSprop">RMSprop</option>
               </select>
             </div>
-            <div className="flex">
+            <div className="flex my-1">
               Epochs:{" "}
               <input
                 type="number"
-                className="bg-zinc-700 rounded p-1 w-10 mx-1 outline-none"
+                className="bg-zinc-700 rounded p-1 w-14 text-right mx-1 outline-none"
                 value={epochs}
                 onChange={(e) => setEpochs(parseInt(e.target.value))}
               />
             </div>
-            <div className="flex">
+            <div className="flex my-1">
               Batch Size:{" "}
               <input
                 type="number"
-                className="bg-zinc-700 rounded p-1 w-10 mx-1 outline-none"
+                className="bg-zinc-700 rounded p-1 w-14 text-right mx-1 outline-none"
                 value={batchSize}
                 onChange={(e) => setBatchSize(parseInt(e.target.value))}
               />
