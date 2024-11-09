@@ -13,15 +13,12 @@ export const POST = async (req: NextRequest) => {
           id,
         },
       });
-  
+
       const userExists = !!user;
 
-
       if (userExists) {
-        return NextResponse.json({userExists});
+        return NextResponse.json({ userExists });
       }
-
-
     } catch (error) {
       return NextResponse.json({ error }, { status: 500 });
     }

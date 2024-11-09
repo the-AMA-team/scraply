@@ -6,7 +6,7 @@ const axios = require("axios");
 // code for updating the attempts
 export const POST = async (req: NextRequest) => {
   try {
-    const { userId, attemptId, updatedData  } = await req.json();
+    const { userId, attemptId, updatedData } = await req.json();
 
     // const updatedAttempt = await prisma.attempt.updateMany({
     //     where: {
@@ -17,17 +17,20 @@ export const POST = async (req: NextRequest) => {
     // });
 
     const updatedAttempt = await prisma.attempt.updateMany({
-        where: {
-            userId: userId,
-            id: attemptId
-        },
-        data: updatedData
+      where: {
+        userId: userId,
+        id: attemptId,
+      },
+      data: updatedData,
     });
 
     if (updatedAttempt.count == 0) {
-        return NextResponse.json({ error : "Not Found"} , {status: 404});
+      return NextResponse.json({ error: "Not Found" }, { status: 404 });
     }
-    return NextResponse.json({ updatedAttempt: updatedAttempt }, { status: 200 });
+    return NextResponse.json(
+      { updatedAttempt: updatedAttempt },
+      { status: 200 }
+    );
   } catch (error) {
     // console.error(error);
     return NextResponse.json({ error }, { status: 500 });
