@@ -20,7 +20,7 @@ import OnBoardBlock from "./OnBoardBlock";
 import { useArchitecture } from "@/contexts/ArchitectureContext";
 import axios from "axios";
 import { useUser } from "@/contexts/UserContext";
-import { Attempt } from "@prisma/client";
+import { Attempt, Level } from "@prisma/client";
 import { useRouter } from "next/navigation";
 
 const initialBlocks: Block[] = [
@@ -110,9 +110,18 @@ const getUserProgress = async (
   }
 };
 
-const updateUserProgress = async (lastLoss: number) => {
+const updateUserProgress = async (
+  userId: string,
+  attemptId: string,
+  updatedData: Omit<Omit<Attempt, "id">, "userId">
+) => {
+  console.log("updateUserProgress");
   try {
-    const response = await axios.post("http://localhost:3000/api/user");
+    const response = await axios.post("http://localhost:3000/api/attempt", {
+      userId,
+      attemptId,
+      updatedData,
+    });
     console.log(response);
   } catch (error) {
     console.error(error);
@@ -153,7 +162,29 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
     // get user progress
     if (!user) return;
     getUserProgress(level, user.uid).then((attempt) => {
+      // convert the json in attempt.archetecture to blocks
+      if (attempt?.archetecture) {
+        const jsonLayers = JSON.parse(attempt.archetecture as string).layers;
+
+        const blocks = [];
+
+        for (let i = 0; i < jsonLayers.length; i += 2) {
+          const b_: Block = {
+            id: `${jsonLayers[i].kind}-${Math.random()}`,
+            label: jsonLayers[i].kind,
+            neurons: jsonLayers[i].args[0],
+            color: "#20FF8F",
+            activationFunction: jsonLayers[i + 1].kind,
+          };
+          blocks.push(b_);
+        }
+        console.log(blocks);
+        setCanvasBlocks(blocks);
+      }
       setCurrentAttempt(attempt || null);
+
+      const attemptConfig = JSON.parse(attempt?.archetecture as string);
+      setLastLoss(attempt?.lastLoss || null);
     });
   }, [user]);
 
@@ -163,9 +194,25 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
 
   useEffect(() => {
     // update user progress
-    // if (lastLoss) {
-    // updateUserProgress(lastLoss);
-    // }
+    if (!user || !currentAttmpt) return;
+    if (lastLoss) {
+      updateUserProgress(user.uid, currentAttmpt!.id, {
+        level: `L${level}` as Level,
+        rating: 1,
+        archetecture: JSON.stringify(
+          getConfig(
+            "pima",
+            canvasBlocks,
+            loss,
+            optimizer,
+            learningRate,
+            epochs,
+            batchSize
+          )
+        ),
+        lastLoss,
+      });
+    }
   }, [lastLoss]);
 
   const sensors = useSensors(
