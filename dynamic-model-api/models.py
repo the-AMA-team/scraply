@@ -1,9 +1,7 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import numpy as np
 from params import DATASETS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
-
+# data loader + suggestions
 # expected data example from the api
 data = {
     "input": "pima",
