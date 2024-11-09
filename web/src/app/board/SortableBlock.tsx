@@ -28,7 +28,7 @@ const SortableBlock = ({ id, label, color }: Block) => {
       {...attributes}
       className=""
     >
-      <OnBoardBlock label={label} color={color} />
+      <OnBoardBlock label={label} color={color} id={id} />
     </div>
   );
 };

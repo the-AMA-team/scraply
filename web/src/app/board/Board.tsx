@@ -6,6 +6,7 @@ import {
   DragOverEvent,
   DragOverlay,
   DragStartEvent,
+  UniqueIdentifier,
   closestCenter,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -13,32 +14,38 @@ import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import { Block } from "@/types";
 import OnBoardBlock from "./OnBoardBlock";
+import { useArchitecture } from "@/contexts/ArchitectureContext";
 
 const initialBlocks: Block[] = [
-  { id: "linear", label: "Linear", color: "#20FF8F" },
-  { id: "conv", label: "Conv", color: "#FFD620" },
-  { id: "rnn", label: "RNN", color: "#FF8C20" },
-  { id: "gru", label: "GRU", color: "#FF4920" },
+  {
+    id: "linear",
+    label: "Linear",
+    color: "#20FF8F",
+    activationFunction: "ReLU",
+  },
+  { id: "conv", label: "Conv", color: "#FFD620", activationFunction: "ReLU" },
+  { id: "rnn", label: "RNN", color: "#FF8C20", activationFunction: "ReLU" },
+  { id: "gru", label: "GRU", color: "#FF4920", activationFunction: "ReLU" },
 ];
 
 const ScratchLikeEditor = () => {
-  const [canvasBlocks, setCanvasBlocks] = useState<Block[]>([]);
+  const { canvasBlocks, setCanvasBlocks } = useArchitecture()!;
   const [activeBlock, setActiveBlock] = useState<Block | null>(null);
+
+  console.log(canvasBlocks);
 
   const handleDragStart = (event: DragStartEvent) => {
     const { id } = event.active;
     const block =
       (initialBlocks.find((item) => item.id === id) as Block) ||
-      (canvasBlocks.find((item) => item.id === id) as Block);
+      (canvasBlocks.find(
+        (item: { id: UniqueIdentifier }) => item.id === id
+      ) as Block);
     setActiveBlock(block);
   };
 
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
-
-    // Log to debug
-    console.log("Active item:", active);
-    console.log("Over target:", over);
 
     if (
       over &&
@@ -88,6 +95,7 @@ const ScratchLikeEditor = () => {
                 id={block.id}
                 label={block.label}
                 color={block.color}
+                activationFunction={block.activationFunction}
               />
             ))}
           </div>
@@ -101,9 +109,13 @@ const ScratchLikeEditor = () => {
       </div>
 
       <DragOverlay>
-        {activeBlock ? (
-          <OnBoardBlock label={activeBlock.label} color={activeBlock.color} />
-        ) : null}
+        {activeBlock && (
+          <OnBoardBlock
+            label={activeBlock.label}
+            color={activeBlock.color}
+            id={activeBlock.id}
+          />
+        )}
       </DragOverlay>
     </DndContext>
   );
