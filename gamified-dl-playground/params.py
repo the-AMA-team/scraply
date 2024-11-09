@@ -55,7 +55,9 @@ ACTIVATIONS = {
     "Sigmoid": nn.Sigmoid(),
     "Tanh": nn.Tanh(),
     "Softmax": nn.Softmax(),
-    "LeakyReLU": nn.LeakyReLU()
+    "LeakyReLU": nn.LeakyReLU(),
+    "PReLU": nn.PReLU(),
+    "Tanh": nn.Tanh()
 }
 
 
@@ -71,10 +73,15 @@ LAYERS = {
 
 
 LOSSES = {
-    "BCE": nn.BCELoss()
+    "BCE": nn.BCELoss(), # binary cross entropy --> 0 or 1 classification models
+    "CrossEntropy": nn.CrossEntropyLoss() # multi-class classification models
+    # "MSE": nn.MSELoss() # regression models
 }
 
 
 OPTIMIZERS = {
-    "Adam": lambda model_params, lr: optim.Adam(model_params, lr)
+    "Adam": lambda model_params, lr: optim.Adam(model_params, lr), # momentum parameter is optional
+    "AdamW": lambda model_params, lr: optim.AdamW(model_params, lr),
+    "SGD": lambda model_params, lr: optim.SGD(model_params, lr),
+    "RMSprop": lambda model_params, lr: optim.RMSprop(model_params, lr)
 }
