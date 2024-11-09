@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   DndContext,
   DragEndEvent,
@@ -18,6 +18,10 @@ import DroppableCanvas from "./DroppableCanvas";
 import { Block } from "@/types";
 import OnBoardBlock from "./OnBoardBlock";
 import { useArchitecture } from "@/contexts/ArchitectureContext";
+import axios from "axios";
+import { useUser } from "@/contexts/UserContext";
+import { Attempt } from "@prisma/client";
+import { useRouter } from "next/navigation";
 
 const initialBlocks: Block[] = [
   {
@@ -86,11 +90,50 @@ const getConfig = (
   return config;
 };
 
+const getUserProgress = async (
+  level: number,
+  uid: string
+): Promise<Attempt | undefined> => {
+  try {
+    const response = await axios.get(
+      `http://localhost:3000/api/attempt/${uid}`
+    );
+    console.log(response);
+    console.log(response.data);
+    if (response.data) {
+      return response.data.attempts.find(
+        (attempt: any) => attempt.level === `L${level}`
+      );
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const updateUserProgress = async (lastLoss: number) => {
+  try {
+    const response = await axios.post("http://localhost:3000/api/user");
+    console.log(response);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 interface BoardProps {
+  level: number;
   setShowConfetti: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const Board = ({ setShowConfetti }: BoardProps) => {
+const Board = ({ level, setShowConfetti }: BoardProps) => {
+  const { user, loading } = useUser()!;
+  const router = useRouter();
+
+  if (!user && !loading) {
+    router.push("/");
+  }
+
+  const [currentAttmpt, setCurrentAttempt] = useState<Attempt | null>(null);
+
   const { canvasBlocks, setCanvasBlocks } = useArchitecture()!;
   const [activeBlock, setActiveBlock] = useState<Block | null>(null);
 
@@ -105,6 +148,25 @@ const Board = ({ setShowConfetti }: BoardProps) => {
   const [lastLoss, setLastLoss] = useState<number | null>(null);
 
   console.log(canvasBlocks);
+
+  useEffect(() => {
+    // get user progress
+    if (!user) return;
+    getUserProgress(level, user.uid).then((attempt) => {
+      setCurrentAttempt(attempt || null);
+    });
+  }, [user]);
+
+  useEffect(() => {
+    console.log(currentAttmpt);
+  }, [currentAttmpt]);
+
+  useEffect(() => {
+    // update user progress
+    // if (lastLoss) {
+    // updateUserProgress(lastLoss);
+    // }
+  }, [lastLoss]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

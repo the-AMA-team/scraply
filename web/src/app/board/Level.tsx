@@ -37,7 +37,7 @@ const Level = ({ level }: LevelProps) => {
           {LEVEL_DESC[level - 1].prompt}
         </div>
       </div>
-      <Board setShowConfetti={setShowConfetti} />
+      <Board setShowConfetti={setShowConfetti} level={level} />
     </div>
   );
 };

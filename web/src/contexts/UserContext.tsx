@@ -8,6 +8,7 @@ interface UserContextType {
   user: User | null;
   handleGoogleSignIn: () => void;
   handleGoogleSignOut: () => void;
+  loading: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -16,14 +17,16 @@ export const useUser = () => useContext(UserContext);
 
 export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        setUser(user);
-      } else {
-        setUser(null);
-      }
+      setUser((prev) => {
+        setLoading(false);
+        return user;
+      });
+      console.log(user);
     });
 
     return () => unsubscribe();
@@ -71,9 +74,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         handleGoogleSignIn,
         handleGoogleSignOut,
+        loading,
       }}
     >
-      {children}
+      {!loading && children}
     </UserContext.Provider>
   );
 };
