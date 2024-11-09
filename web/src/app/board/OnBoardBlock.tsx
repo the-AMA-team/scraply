@@ -34,7 +34,7 @@ const OnBoardBlock = ({ id, label, color }: OnBoardBlockProps) => {
       <div className="relative overflow-visible flex">
         <div>
           <select
-            className="h-16 w-16 rounded-full text-zinc-900 outline-none absolute right-[-75px] top-[-20px] text-sm cursor-pointer"
+            className="h-16 w-16 rounded-full bg-zinc-100 text-zinc-900 outline-none absolute right-[-75px] top-[-20px] text-sm cursor-pointer"
             value={
               canvasBlocks.find((block) => block.id === id)
                 ?.activationFunction as string
