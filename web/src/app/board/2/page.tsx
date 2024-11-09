@@ -1,20 +1,21 @@
+"use client";
 import React from "react";
 import LEVEL_DESC from "../../../../../levels/Desc";
 import Board from "../Board";
 
-const page = async ({ params }: { params: Promise<{ level: string }> }) => {
-  const level = parseInt((await params).level);
+import ReactConfetti from "react-confetti";
 
-  if (level < 1 || level > 4) {
-    return (
-      <div className="h-screen text-white bg-zinc-900">
-        <div className="text-3xl">Level doesn't exist</div>
-      </div>
-    );
-  }
+const page = () => {
+  const level = 2;
 
   return (
     <div className="h-screen text-white bg-zinc-900">
+      <ReactConfetti
+        run={true}
+        height={window.screen.height - 125}
+        width={window.screen.width - 100}
+      />
+
       <div className="pt-10 px-16">
         <div className="text-3xl">Level {level}</div>
         <div className="text-xl">{LEVEL_DESC[level - 1].title}</div>
