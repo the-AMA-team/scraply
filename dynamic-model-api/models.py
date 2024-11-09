@@ -46,7 +46,7 @@ class DynamicModel(nn.Module):
             elif layer_type in ACTIVATIONS.keys(): # is activation function
                 component = ACTIVATIONS[layer_type] 
 
-            else: 
+            else:
                 print("Invalid layer type")
                 break
 

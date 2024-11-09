@@ -57,8 +57,8 @@ def are_params_valid(data):
 
 DATALOADERS = {
     "pima": {
-        "train": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, :-1].values,
-        "test": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, -1].values,
+        "X": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, :-1].values,
+        "y": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, -1].values,
     },
     "MNIST": {
         "train": datasets.MNIST(
