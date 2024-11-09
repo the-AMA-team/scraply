@@ -15,9 +15,10 @@ import { Block } from "@/types";
 import OnBoardBlock from "./OnBoardBlock";
 
 const initialBlocks: Block[] = [
-  { id: "move", label: "Linear", color: "red-500" },
-  { id: "rotate", label: "Conv", color: "sky-500" },
-  { id: "repeat", label: "Rnn", color: "teal-500" },
+  { id: "linear", label: "Linear", color: "#20FF8F" },
+  { id: "conv", label: "Conv", color: "#FFD620" },
+  { id: "rnn", label: "RNN", color: "#FF8C20" },
+  { id: "gru", label: "GRU", color: "#FF4920" },
 ];
 
 const ScratchLikeEditor = () => {

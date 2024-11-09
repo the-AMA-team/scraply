@@ -1,3 +1,4 @@
+"use client";
 import { Block } from "@/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -25,7 +26,7 @@ const SortableBlock = ({ id, label, color }: Block) => {
       style={style}
       {...listeners}
       {...attributes}
-      className="mx-2"
+      className=""
     >
       <OnBoardBlock label={label} color={color} />
     </div>
