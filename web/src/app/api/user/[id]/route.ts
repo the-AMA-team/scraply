@@ -1,13 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import prisma from "../../../../../utils/connect";
 
-const axios = require("axios");
+export const GET = async (req: NextRequest, {params} : any) => {
+    try {
+      const { id } = await params;
+      const user = await prisma.user.findUnique({
+        where: {
+          id: id
+        }
+      });
+  
+      // if (!user) {
+      //   console.log("User not found");
+      //   return null;
+      // }
+  
+      // console.log("User found:", user);
+      return NextResponse.json({ user: user}, {status: 200});
+    } catch (error) {
+      console.error("Error retrieving user:", error);
+      return NextResponse.json({ error }, {status: 200});
 
-export const POST = async (req: NextRequest) => {
-  try {
-    const id = await req;
-    return NextResponse.json({ hello: id }, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error }, { status: 500 });
+      throw error;
+    }
   }
-};
