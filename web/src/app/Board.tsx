@@ -12,11 +12,12 @@ import { arrayMove } from "@dnd-kit/sortable";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import { Block } from "@/types";
+import OnBoardBlock from "./OnBoardBlock";
 
-const initialBlocks = [
-  { id: "move", label: "Linear" },
-  { id: "rotate", label: "Conv" },
-  { id: "repeat", label: "Rnn" },
+const initialBlocks: Block[] = [
+  { id: "move", label: "Linear", color: "red-500" },
+  { id: "rotate", label: "Conv", color: "sky-500" },
+  { id: "repeat", label: "Rnn", color: "teal-500" },
 ];
 
 const ScratchLikeEditor = () => {
@@ -80,7 +81,12 @@ const ScratchLikeEditor = () => {
         <div className="w-[150px]">
           <h3>Blocks</h3>
           {initialBlocks.map((block) => (
-            <DraggableBlock key={block.id} id={block.id} label={block.label} />
+            <DraggableBlock
+              key={block.id}
+              id={block.id}
+              label={block.label}
+              color={block.color}
+            />
           ))}
         </div>
 
@@ -93,9 +99,7 @@ const ScratchLikeEditor = () => {
 
       <DragOverlay>
         {activeBlock ? (
-          <div className="p-8 bg-zinc-700 rounded-lg text-center">
-            {activeBlock.label}
-          </div>
+          <OnBoardBlock label={activeBlock.label} color={activeBlock.color} />
         ) : null}
       </DragOverlay>
     </DndContext>

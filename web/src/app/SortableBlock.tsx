@@ -1,8 +1,9 @@
 import { Block } from "@/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import OnBoardBlock from "./OnBoardBlock";
 
-const SortableBlock = ({ id, label }: Block) => {
+const SortableBlock = ({ id, label, color }: Block) => {
   const {
     attributes,
     listeners,
@@ -24,9 +25,9 @@ const SortableBlock = ({ id, label }: Block) => {
       style={style}
       {...listeners}
       {...attributes}
-      className="p-8 bg-zinc-800 rounded-md m-4 cursor-grab"
+      className="mx-2"
     >
-      {label}
+      <OnBoardBlock label={label} color={color} />
     </div>
   );
 };
