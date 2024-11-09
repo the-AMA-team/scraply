@@ -6,6 +6,26 @@ const axios = require("axios");
 export const POST = async (req: NextRequest) => {
   try {
     const { id, name } = await req.json();
+
+    try {
+      const user = await prisma.user.findUnique({
+        where: {
+          id,
+        },
+      });
+  
+      const userExists = !!user;
+
+
+      if (userExists) {
+        return NextResponse.json({userExists});
+      }
+
+
+    } catch (error) {
+      return NextResponse.json({ error }, { status: 500 });
+    }
+
     const newUser = await prisma.user.create({
       data: {
         id: id,

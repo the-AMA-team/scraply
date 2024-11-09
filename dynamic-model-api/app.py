@@ -1,8 +1,10 @@
 from flask import Flask, request
 from models import DynamicModel, Train
 from params import are_params_valid
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 
 @app.route("/")
