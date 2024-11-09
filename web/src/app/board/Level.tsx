@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import LEVEL_DESC from "../../../../levels/Desc";
 import Board from "./Board";
 import ReactConfetti from "react-confetti";
@@ -9,10 +9,23 @@ interface LevelProps {
 }
 
 const Level = ({ level }: LevelProps) => {
+  const [runConfetti, setRunConfetti] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  useEffect(() => {
+    if (showConfetti) {
+      setRunConfetti(true);
+      setTimeout(() => {
+        setShowConfetti(false);
+      }, 2000);
+    }
+  }, [showConfetti]);
+
   return (
     <div className="h-screen text-white bg-zinc-900">
       <ReactConfetti
-        run={true}
+        run={runConfetti}
+        recycle={showConfetti}
         height={window.screen.height - 125}
         width={window.screen.width - 100}
       />
@@ -24,7 +37,7 @@ const Level = ({ level }: LevelProps) => {
           {LEVEL_DESC[level - 1].prompt}
         </div>
       </div>
-      <Board />
+      <Board setShowConfetti={setShowConfetti} />
     </div>
   );
 };

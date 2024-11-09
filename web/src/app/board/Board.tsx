@@ -86,7 +86,11 @@ const getConfig = (
   return config;
 };
 
-const ScratchLikeEditor = () => {
+interface BoardProps {
+  setShowConfetti: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const Board = ({ setShowConfetti }: BoardProps) => {
   const { canvasBlocks, setCanvasBlocks } = useArchitecture()!;
   const [activeBlock, setActiveBlock] = useState<Block | null>(null);
 
@@ -173,7 +177,12 @@ const ScratchLikeEditor = () => {
         "Content-Type": "application/json",
       },
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (res.status === 200) {
+          setShowConfetti(true);
+        }
+        return res.json();
+      })
       .then((data) => {
         console.log(data);
         setLastLoss(data["final_loss"]);
@@ -291,4 +300,4 @@ const ScratchLikeEditor = () => {
   );
 };
 
-export default ScratchLikeEditor;
+export default Board;
