@@ -1,4 +1,4 @@
-# DeepCraft
+# Scraply
 
 A gamified deep learning playground with a scratch-like, no-code UI 🚀🚀🚀
 
