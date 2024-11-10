@@ -4,7 +4,9 @@ from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torchvision import datasets, transforms
 from torchvision.transforms import ToTensor
+from torch.utils.data import DataLoader, TensorDataset
 import torch.nn.functional as F
+from sklearn.model_selection import train_test_split  # --> pip install scikit-learn
 
 from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 
@@ -62,7 +64,37 @@ class DynamicModel(nn.Module):
 # would the model need to be stored temporarily so that it can be accessed after training to make predictions? how can models be stored?
 # if we build the prediction to be a class instance is it a good idea to just store it as a bin file???
 
-# TODO: make this dynamic wrt sample data
+
+# pima dataset
+
+
+# # 4. Normalize the data (optional but recommended for neural networks)
+# # scaler = StandardScaler()
+# # X_train = scaler.fit_transform(X_train)
+# # X_test = scaler.transform(X_test)
+
+# # 5. Convert the data into torch tensors
+# X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
+# y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(
+#     -1, 1
+# )  # Reshape for binary classification
+# X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
+# y_test_tensor = torch.tensor(y_test, dtype=torch.float32).reshape(-1, 1)
+
+# # 6. Create Dataset objects
+# train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+# test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
+
+# # 7. Create DataLoader objects for batching
+# batch_size = 32  # You can adjust the batch size
+# train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+# test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+# # Example usage:
+# for batch_idx, (X_batch, y_batch) in enumerate(train_loader):
+#     print(
+#         f"Batch {batch_idx+1} - X_batch shape: {X_batch.shape}, y_batch shape: {y_batch.shape}"
+#     )
 
 
 class Train:
@@ -85,8 +117,31 @@ class Train:
 
         # preprocessing data here!!!
         if input == "pima":
-            self.X = torch.tensor(ds["X"], dtype=torch.float32)
-            self.Y = torch.tensor(ds["y"], dtype=torch.float32).reshape(-1, 1)
+            X = ds["X"]
+            y = ds["y"]
+
+            # split test and training data using ski-kit learn module
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42
+            )
+            # could normalize the data here
+            # create tensors
+            X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
+            y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(
+                -1, 1
+            )  # Reshape for binary classification
+            X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
+            y_test_tensor = torch.tensor(y_test, dtype=torch.float32).reshape(-1, 1)
+            # create dataset objects
+            train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+            test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
+            # create dataLoader objects
+            self.train_loader = DataLoader(
+                train_dataset, batch_size=batch_size, shuffle=True
+            )
+            self.test_loader = DataLoader(
+                test_dataset, batch_size=batch_size, shuffle=False
+            )
         else:
             train_set = ds[
                 "train"
@@ -107,90 +162,90 @@ class Train:
         self.final_loss = -1
 
     def train(self, n_epochs, batch_size):
-        if self.input == "pima":
-            # PIMA TRAINING FUNCTION
-            for epoch in range(n_epochs):
-                for i in range(0, len(self.X), batch_size):
-                    batchX = self.X[i : i + batch_size]
-                    y_pred = self.model(batchX)
-                    y_batch = self.Y[i : i + batch_size]
-                    loss = self.loss_fn(y_pred, y_batch)
-                    self.optimizer.zero_grad()
-                    loss.backward()
-                    self.optimizer.step()
+        # if self.input == "pima":
+        #     # PIMA TRAINING FUNCTION
+        #     for epoch in range(n_epochs):
+        #         for i in range(0, len(self.X), batch_size):
+        #             batchX = self.X[i : i + batch_size]
+        #             y_pred = self.model(batchX)
+        #             y_batch = self.Y[i : i + batch_size]
+        #             loss = self.loss_fn(y_pred, y_batch)
+        #             self.optimizer.zero_grad()
+        #             loss.backward()
+        #             self.optimizer.step()
 
-                    self.final_loss = loss
+        #             self.final_loss = loss
 
-            return self.final_loss
-        else:
-            # IMAGE DATASETS TRAINING FUNCTION
-            size = len(self.train_loader.dataset)
-            # num_batches = len(self.train_loader)
-            self.model.train()
-            train_loss = 0
-            correct = 0
-            total = 0
+        #     return self.final_loss
+        # else:
+        #     # IMAGE DATASETS TRAINING FUNCTION
+        size = len(self.train_loader.dataset)
+        # num_batches = len(self.train_loader)
+        self.model.train()
+        train_loss = 0
+        correct = 0
+        total = 0
 
-            for batch, (X, y) in enumerate(self.train_loader):
+        for batch, (X, y) in enumerate(self.train_loader):
+            X, y = X.to(self.device), y.to(self.device)
+            # Compute prediction error
+            pred = self.model(X)
+            loss = self.loss_fn(pred, y)
+            # Backpropagation
+            loss.backward()
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+            train_loss += loss.item()
+            # Calculate accuracy
+            _, predicted = torch.max(
+                pred, 1
+            )  # Get the predicted class (index with max value)
+            correct += (predicted == y).sum().item()  # Count correct predictions
+            total += y.size(0)  # Count total predictions
+
+            if batch % 100 == 0:
+                loss, current = loss.item(), (batch + 1) * len(X)
+                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+        # Average loss over all batches
+        avg_train_loss = train_loss / len(self.train_loader)
+        # Calculate accuracy as a percentage
+        avg_acc = 100 * correct / total
+        return avg_train_loss, avg_acc
+
+    def test(self, n_epochs, batch_size):
+        # if self.input == "pima":
+        #     # PIMA TRAINING FUNCTION
+        #     # do nothing, because pima currently does not have a test_dataset (only has X, y dataset --> has not been split yet)
+        #     print("PIMA is not configured to have a test dataset yet")
+        # else:
+        size = len(self.test_loader.dataset)
+        num_batches = len(self.test_loader)
+        self.model.eval()
+        test_loss, correct = 0, 0
+
+        with torch.no_grad():
+            for X, y in self.test_loader:
                 X, y = X.to(self.device), y.to(self.device)
                 # Compute prediction error
                 pred = self.model(X)
-                loss = self.loss_fn(pred, y)
-                # Backpropagation
-                loss.backward()
-                self.optimizer.step()
-                self.optimizer.zero_grad()
-                train_loss += loss.item()
-                # Calculate accuracy
-                _, predicted = torch.max(
-                    pred, 1
-                )  # Get the predicted class (index with max value)
-                correct += (predicted == y).sum().item()  # Count correct predictions
-                total += y.size(0)  # Count total predictions
+                test_loss += self.loss_fn(pred, y).item()
+                correct += (
+                    (pred.argmax(1) == y).type(torch.float).sum().item()
+                )  # for accuracy
 
-                if batch % 100 == 0:
-                    loss, current = loss.item(), (batch + 1) * len(X)
-                    print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+        test_loss /= num_batches
+        correct /= size
+        avg_acc = 100 * correct
 
-            # Average loss over all batches
-            avg_train_loss = train_loss / len(self.train_loader)
-            # Calculate accuracy as a percentage
-            avg_acc = 100 * correct / total
-            return avg_train_loss, avg_acc
+        # Print loss & accuracy
+        print(
+            f"Test Error: \n Accuracy: {(avg_acc):>0.1f}%, Avg loss: {test_loss:>8f} \n"
+        )
 
-    def test(self, n_epochs, batch_size):
-        if self.input == "pima":
-            # PIMA TRAINING FUNCTION
-            # do nothing, because pima currently does not have a test_dataset (only has X, y dataset --> has not been split yet)
-            print("PIMA is not configured to have a test dataset yet")
-        else:
-            size = len(self.test_loader.dataset)
-            num_batches = len(self.test_loader)
-            self.model.eval()
-            test_loss, correct = 0, 0
-
-            with torch.no_grad():
-                for X, y in self.test_loader:
-                    X, y = X.to(self.device), y.to(self.device)
-                    # Compute prediction error
-                    pred = self.model(X)
-                    test_loss += self.loss_fn(pred, y).item()
-                    correct += (
-                        (pred.argmax(1) == y).type(torch.float).sum().item()
-                    )  # for accuracy
-
-            test_loss /= num_batches
-            correct /= size
-            avg_acc = 100 * correct
-
-            # Print loss & accuracy
-            print(
-                f"Test Error: \n Accuracy: {(avg_acc):>0.1f}%, Avg loss: {test_loss:>8f} \n"
-            )
-
-            # Average loss over all batches
-            avg_test_loss = test_loss / len(self.test_loader)
-            return avg_test_loss, avg_acc
+        # Average loss over all batches
+        avg_test_loss = test_loss / len(self.test_loader)
+        return avg_test_loss, avg_acc
 
     def train_test_log(self, n_epochs, batch_size):
         train_losses = []
@@ -230,19 +285,19 @@ class Train:
 
 if __name__ == "__main__":
     params = {
-        "input": "MNIST",
+        "input": "pima",
         "layers": [
-            {"kind": "Flatten", "args": ()},
-            {"kind": "Linear", "args": (28 * 28, 512)},
+            {"kind": "Linear", "args": (8, 12)},
             {"kind": "ReLU"},
-            {"kind": "Linear", "args": (512, 512)},
+            {"kind": "Linear", "args": (12, 8)},
+            {"kind": "ReLU"},
+            {"kind": "Linear", "args": (8, 1)},
             {"kind": "Sigmoid"},
-            {"kind": "Linear", "args": (512, 10)},
         ],
-        "loss": "CrossEntropy",
+        "loss": "BCE",
         "optimizer": {"kind": "Adam", "lr": 0.001},
-        "epoch": 5,
-        "batch_size": 100,
+        "epoch": 3,
+        "batch_size": 10,
     }
 
     model = DynamicModel(params["layers"])
@@ -255,7 +310,7 @@ if __name__ == "__main__":
         optimizer=params["optimizer"],
         batch_size=params["batch_size"],
     )
-    
+
     RESULTS = t.train_test_log(params["epoch"], batch_size=params["batch_size"])
     print("Results:")
     print("Average Training Loss: ", RESULTS["avg_train_loss"])
