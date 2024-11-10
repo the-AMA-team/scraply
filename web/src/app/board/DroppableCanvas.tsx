@@ -15,7 +15,7 @@ const DroppableCanvas = ({ blocks }: { blocks: Block[] }) => {
   return (
     <div
       ref={setNodeRef}
-      className="flex h-full border-2 rounded-3xl border-dashed border-zinc-600 p-8 px-28 bg-zinc-900 whitespace-nowrap z-10 items-center"
+      className="flex h-5/6 border-2 rounded-3xl border-dashed border-zinc-600 p-8 px-28 bg-zinc-900 whitespace-nowrap z-10 items-center"
     >
       <SortableContext
         items={blocks.map((block: Block) => block.id)}

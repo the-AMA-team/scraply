@@ -22,6 +22,7 @@ import axios from "axios";
 import { useUser } from "@/contexts/UserContext";
 import { Attempt, Level } from "@prisma/client";
 import { useRouter } from "next/navigation";
+import { ResponsiveLine } from "@nivo/line";
 
 const initialBlocks: Block[] = [
   {
@@ -162,8 +163,12 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
 
   const [isTraining, setIsTraining] = useState(false);
   const [lastLoss, setLastLoss] = useState<number | null>(null);
+  const [trainingRes, setTrainingRes] = useState<any | null>(null);
+  const [progress, setProgress] = useState(0);
 
   const [isModalOpen, setIsModalOpen] = useState(true);
+
+  const [graphData, setGraphData] = useState<any | null>(null);
 
   console.log(canvasBlocks);
 
@@ -308,21 +313,36 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
       })
       .then((data) => {
         console.log(data);
-        setLastLoss(data["final_loss"]);
+        // setLastLoss(data["final_loss"]);
+        setTrainingRes(data);
+        setProgress(Math.round(data["avg_test_acc"] * 100) * 0.01);
+
+        const testLosses = data["test_losses"].map(
+          (item: number, idx: number) => ({
+            x: idx,
+            y: item,
+          })
+        );
+
+        const trainLosses = data["train_losses"].map(
+          (item: number, idx: number) => ({
+            x: idx,
+            y: item,
+          })
+        );
+
+        setGraphData([
+          { id: "test_loss", data: testLosses },
+          { id: "train_loss", data: trainLosses },
+        ]);
       });
 
     setIsTraining(false);
+    setIsModalOpen(true);
   };
 
   useEffect(() => {
     // document.getElementById("upload_modal")?.showModal();
-  }, []);
-  const [progress, setProgress] = useState(0); // initial progress
-
-  useEffect(() => {
-    setTimeout(() => {
-      setProgress(90);
-    }, 1000);
   }, []);
 
   // Calculate the stroke-dasharray for the progress circle
@@ -384,6 +404,7 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
               <div className="mt-2 text-center text-lg font-semibold text-green-500">
                 {progress}% Accuracy Achieved!
               </div>
+              {/* {JSON.stringify(trainingRes)} */}
             </div>
           </div>
         </div>
@@ -405,7 +426,7 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
       <div className={`flex gap-20 p-20 pt-10 ${isModalOpen && "opacity-50"}`}>
         {/* Toolbox area */}
         <div className="w-36">
-          <h3>Layers</h3>
+          <h3>Scraps</h3>
           <div className="bg-zinc-800 py-1 rounded-xl">
             {initialBlocks.map((block) => (
               <DraggableBlock
@@ -486,6 +507,64 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
               </button>
             </div>
             {<div>Last Loss: {lastLoss}</div>}
+          </div>
+          <div>
+            {trainingRes?.test_losses && (
+              <div className="h-72 w-72 mt-2 text-center bg-zinc-50 rounded-md">
+                <ResponsiveLine
+                  data={graphData}
+                  margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
+                  enableGridX={false}
+                  enableGridY={false}
+                  xScale={{ type: "point" }}
+                  yScale={{
+                    type: "linear",
+                    min: "auto",
+                    max: "auto",
+                    stacked: true,
+                    reverse: false,
+                  }}
+                  axisTop={null}
+                  axisRight={null}
+                  axisBottom={null}
+                  axisLeft={{
+                    tickSize: 5,
+                    tickPadding: 5,
+                    tickRotation: 0,
+                    legend: "Loss",
+                    legendOffset: -40,
+                    legendPosition: "middle",
+                  }}
+                  // colors={{ scheme: "" }}
+                  pointSize={2}
+                  pointColor={{ theme: "background" }}
+                  pointBorderWidth={2}
+                  pointBorderColor={{ from: "serieColor" }}
+                  pointLabelYOffset={-12}
+                  useMesh={true}
+                  legends={[
+                    {
+                      anchor: "bottom-right",
+                      direction: "column",
+                      justify: false,
+                      translateX: 100,
+                      translateY: 0,
+                      itemsSpacing: 0,
+                      itemDirection: "left-to-right",
+                      itemWidth: 80,
+                      itemHeight: 20,
+                      itemOpacity: 0.75,
+                      symbolSize: 12,
+                      symbolShape: "circle",
+                      symbolBorderColor: "rgba(0, 0, 0, .5)",
+                    },
+                  ]}
+                />
+              </div>
+            )}
+            <button className="bg-blue-500 py-2 px-4 m-2 rounded-md">
+              Download Python Notebook
+            </button>
           </div>
         </div>
       </div>

@@ -22,7 +22,7 @@ const Level = ({ level }: LevelProps) => {
   }, [showConfetti]);
 
   return (
-    <div className="h-screen text-white bg-zinc-900">
+    <div className="h-screen text-white bg-zinc-900 overflow-hidden">
       <ReactConfetti
         run={runConfetti}
         recycle={showConfetti}
