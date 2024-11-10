@@ -17,12 +17,11 @@ params = {
     "loss": "BCE",
     "optimizer": {"kind": "Adam", "lr": 0.001},
     "epoch": 100,
-    "batch_size": 10, 
+    "batch_size": 10,
 }
 
 try:
     response = requests.post(URL, json=params)
-
     # Print the response
     print(f"Status Code: {response.status_code}")
     print(f"Response: {response.json()}")

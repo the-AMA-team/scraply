@@ -223,6 +223,7 @@ class Train:
         avg_test_loss = sum(test_losses) / len(test_losses)
 
         print("Done!")
+        # torch.cuda.empty_cache()
 
         return {
             "train_losses": train_losses,
@@ -237,6 +238,21 @@ class Train:
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    def plot_loss_graph(train_losses, test_losses, n_epochs):
+        plt.figure(figsize=(10, 6))
+        plt.plot(
+            range(1, n_epochs + 1), train_losses, label="Training Loss", color="blue"
+        )
+        plt.plot(range(1, n_epochs + 1), test_losses, label="Testing Loss", color="red")
+        plt.title("Training and Testing Loss over Epochs")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
     params = {
         "input": "pima",
         "layers": [
@@ -249,7 +265,7 @@ if __name__ == "__main__":
         ],
         "loss": "BCE",
         "optimizer": {"kind": "Adam", "lr": 0.001},
-        "epoch": 5,
+        "epoch": 100,
         "batch_size": 10,
     }
 
@@ -265,8 +281,12 @@ if __name__ == "__main__":
     )
 
     RESULTS = t.train_test_log(params["epoch"], batch_size=params["batch_size"])
+
     print("Results:")
     print("Average Training Loss: ", RESULTS["avg_train_loss"])
     print("Average Testing Loss: ", RESULTS["avg_test_loss"])
     print("Average Training Accuracy: ", RESULTS["avg_train_acc"])
     print("Average Testing Accuracy: ", RESULTS["avg_test_acc"])
+
+    # In your main function or after calling train_test_log
+    plot_loss_graph(RESULTS["train_losses"], RESULTS["test_losses"], params["epoch"])
