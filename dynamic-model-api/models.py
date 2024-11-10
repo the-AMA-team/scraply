@@ -225,12 +225,12 @@ class Train:
         # torch.cuda.empty_cache()
 
         return {
-            "train_losses": "train_losses",
-            "test_losses": "test_losses",
-            "avg_train_loss": "avg_train_loss",
-            "avg_test_loss": "avg_test_loss",
-            "avg_train_acc": "avg_train_acc",
-            "avg_test_acc": "avg_test_acc",
+            "train_losses": train_losses,
+            "test_losses": test_losses,
+            "avg_train_loss": avg_train_loss,
+            "avg_test_loss": avg_test_loss,
+            "avg_train_acc": avg_train_acc,
+            "avg_test_acc": avg_test_acc,
         }
 
         # can add more information to this dictionary, like the saved model, best epochs, etc.
