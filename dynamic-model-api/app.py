@@ -73,7 +73,6 @@ def train():
     else:
         Lkind_advice_array[-1] = ""
 
-<<<<<<< HEAD
     print(Lkind_advice_array)
 
     # CHECK LAYER TYPES AGAINST IDEAL ARCHITECTURE
@@ -161,39 +160,3 @@ def train():
         RESULTS = {"error": str(e)}
 
     return RESULTS, ADVICE
-
-
-# curl -X POST http://localhost:5000/train -H "Content-Type: application/json" -d '{
-#     "input": "pima",
-#     "layers": [
-#         {"kind": "Linear", "args": [8, 12]},
-#         {"kind": "ReLU"},
-#         {"kind": "Linear", "args": [12, 8]},
-#         {"kind": "ReLU"},
-#         {"kind": "Linear", "args": [8, 1]},
-#         {"kind": "ReLU"}
-#     ],
-#     "loss": "BCE",
-#     "optimizer": {"kind": "Adam", "lr": 0.001},
-#     "epoch": 100,
-#     "batch_size": 10
-# }'
-=======
-    return RESULTS
-
-
-t = {
-    "layers": [
-        {"kind": "Linear", "args": [8, 12]},
-        {"kind": "ReLU"},
-        {"kind": "Linear", "args": [12, 8]},
-        {"kind": "ReLU"},
-        {"kind": "Linear", "args": [8, 1]},
-        {"kind": "Sigmoid"},
-    ],
-    "loss": "BCE",
-    "optimizer": {"kind": "Adam", "lr": 0.001},
-    "epoch": 100,
-    "batch_size": 10,
-}
->>>>>>> 358131a6a11c75e161fc6937883112108457423d
