@@ -1,24 +1,15 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
+from torchvision import datasets, transforms
+from torchvision.transforms import ToTensor
+import torch.nn.functional as F
+
 from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 
 # data loader + suggestions
 # expected data example from the api
-data = {
-    "input": "pima",
-    "layers": [
-        {"kind": "Linear", "args": (8, 12)},
-        {"kind": "ReLU"},
-        {"kind": "Linear", "args": (12, 8)},
-        {"kind": "ReLU"},
-        {"kind": "Linear", "args": (8, 1)},
-        {"kind": "Sigmoid"},
-    ],
-    "loss": "BCE",
-    "optimizer": "Adam",
-    "epoch": 100,
-    "batch_size": 10,
-}
 
 
 class DynamicModel(nn.Module):
@@ -44,6 +35,9 @@ class DynamicModel(nn.Module):
                 elif layer_type in ["LSTM", "GRU", "RNN"]:
                     i, h_size = layer_args
                     component = LAYERS[layer_type](i, h_size)
+
+                elif layer_type == "Flatten":
+                    component = LAYERS[layer_type]  # no args needed
 
             elif layer_type in ACTIVATIONS.keys():  # is activation function
                 component = ACTIVATIONS[layer_type]
@@ -72,14 +66,39 @@ class DynamicModel(nn.Module):
 
 
 class Train:
-    def __init__(self, model, input, loss, optimizer):
-        # validify data before this point, each valid key should exist and errors for invalid
+    def __init__(self, model, input, loss, optimizer, batch_size):
+        # validate data inputs before this point, each valid key should exist and errors for invalid
+        self.input = input
         ds = DATALOADERS[input]
 
-        self.X = torch.tensor(ds["X"], dtype=torch.float32)
-        self.Y = torch.tensor(ds["y"], dtype=torch.float32).reshape(-1, 1)
+        self.device = (  # for GPU access --> works with CPU as well
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
+        )
+        print(f"Using {self.device} device")
 
-        self.model = model
+        # MOVE MODEL TO DEVICE
+        self.model = model.to(self.device)
+
+        # preprocessing data here!!!
+        if input == "pima":
+            self.X = torch.tensor(ds["X"], dtype=torch.float32)
+            self.Y = torch.tensor(ds["y"], dtype=torch.float32).reshape(-1, 1)
+        else:
+            train_set = ds[
+                "train"
+            ]  # ds["train"] is a dataset object, already transformed into tensor
+            test_set = ds["test"]
+            self.train_loader = DataLoader(
+                train_set, batch_size=batch_size, shuffle=True
+            )
+            self.test_loader = DataLoader(
+                test_set, batch_size=batch_size, shuffle=False
+            )
+
         self.loss_fn = LOSSES[loss]
         self.optimizer = OPTIMIZERS[optimizer["kind"]](
             self.model.parameters(), optimizer["lr"]
@@ -88,26 +107,158 @@ class Train:
         self.final_loss = -1
 
     def train(self, n_epochs, batch_size):
-        for epoch in range(n_epochs):
-            for i in range(0, len(self.X), batch_size):
-                batchX = self.X[i : i + batch_size]
-                y_pred = self.model(batchX)
-                y_batch = self.Y[i : i + batch_size]
-                loss = self.loss_fn(y_pred, y_batch)
-                self.optimizer.zero_grad()
+        if self.input == "pima":
+            # PIMA TRAINING FUNCTION
+            for epoch in range(n_epochs):
+                for i in range(0, len(self.X), batch_size):
+                    batchX = self.X[i : i + batch_size]
+                    y_pred = self.model(batchX)
+                    y_batch = self.Y[i : i + batch_size]
+                    loss = self.loss_fn(y_pred, y_batch)
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
+
+                    self.final_loss = loss
+
+            return self.final_loss
+        else:
+            # IMAGE DATASETS TRAINING FUNCTION
+            size = len(self.train_loader.dataset)
+            # num_batches = len(self.train_loader)
+            self.model.train()
+            train_loss = 0
+            correct = 0
+            total = 0
+
+            for batch, (X, y) in enumerate(self.train_loader):
+                X, y = X.to(self.device), y.to(self.device)
+                # Compute prediction error
+                pred = self.model(X)
+                loss = self.loss_fn(pred, y)
+                # Backpropagation
                 loss.backward()
                 self.optimizer.step()
+                self.optimizer.zero_grad()
+                train_loss += loss.item()
+                # Calculate accuracy
+                _, predicted = torch.max(
+                    pred, 1
+                )  # Get the predicted class (index with max value)
+                correct += (predicted == y).sum().item()  # Count correct predictions
+                total += y.size(0)  # Count total predictions
 
-                self.final_loss = loss
+                if batch % 100 == 0:
+                    loss, current = loss.item(), (batch + 1) * len(X)
+                    print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
-        return self.final_loss
+            # Average loss over all batches
+            avg_train_loss = train_loss / len(self.train_loader)
+            # Calculate accuracy as a percentage
+            avg_acc = 100 * correct / total
+            return avg_train_loss, avg_acc
+
+    def test(self, n_epochs, batch_size):
+        if self.input == "pima":
+            # PIMA TRAINING FUNCTION
+            # do nothing, because pima currently does not have a test_dataset (only has X, y dataset --> has not been split yet)
+            print("PIMA is not configured to have a test dataset yet")
+        else:
+            size = len(self.test_loader.dataset)
+            num_batches = len(self.test_loader)
+            self.model.eval()
+            test_loss, correct = 0, 0
+
+            with torch.no_grad():
+                for X, y in self.test_loader:
+                    X, y = X.to(self.device), y.to(self.device)
+                    # Compute prediction error
+                    pred = self.model(X)
+                    test_loss += self.loss_fn(pred, y).item()
+                    correct += (
+                        (pred.argmax(1) == y).type(torch.float).sum().item()
+                    )  # for accuracy
+
+            test_loss /= num_batches
+            correct /= size
+            avg_acc = 100 * correct
+
+            # Print loss & accuracy
+            print(
+                f"Test Error: \n Accuracy: {(avg_acc):>0.1f}%, Avg loss: {test_loss:>8f} \n"
+            )
+
+            # Average loss over all batches
+            avg_test_loss = test_loss / len(self.test_loader)
+            return avg_test_loss, avg_acc
+
+    def train_test_log(self, n_epochs, batch_size):
+        train_losses = []
+        train_accs = []
+        test_losses = []
+        test_accs = []
+        for t in range(n_epochs):
+            print(f"Epoch {t+1}\n-------------------------------")
+            avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
+            avg_test_loss, test_avg_acc = self.test(n_epochs, batch_size)
+
+            # Store losses
+            train_losses.append(avg_train_loss)
+            train_accs.append(train_avg_acc)
+            test_losses.append(avg_test_loss)
+            test_accs.append(test_avg_acc)
+
+        # calculate average accuracy and average loss
+        avg_train_acc = sum(train_accs) / len(train_accs)
+        avg_test_acc = sum(test_accs) / len(test_accs)
+        avg_train_loss = sum(train_losses) / len(train_losses)
+        avg_test_loss = sum(test_losses) / len(test_losses)
+
+        print("Done!")
+
+        return {
+            "train_losses": train_losses,
+            "test_losses": test_losses,
+            "avg_train_loss": avg_train_loss,
+            "avg_test_loss": avg_test_loss,
+            "avg_train_acc": avg_train_acc,
+            "avg_test_acc": avg_test_acc,
+        }
+
+        # can add more information to this dictionary, like the saved model, best epochs, etc.
 
 
 if __name__ == "__main__":
-    model = DynamicModel(data["layers"])
+    params = {
+        "input": "MNIST",
+        "layers": [
+            {"kind": "Flatten", "args": ()},
+            {"kind": "Linear", "args": (28 * 28, 512)},
+            {"kind": "ReLU"},
+            {"kind": "Linear", "args": (512, 512)},
+            {"kind": "Sigmoid"},
+            {"kind": "Linear", "args": (512, 10)},
+        ],
+        "loss": "CrossEntropy",
+        "optimizer": {"kind": "Adam", "lr": 0.001},
+        "epoch": 5,
+        "batch_size": 100,
+    }
+
+    model = DynamicModel(params["layers"])
+    # model = DynamicModel(params["layers"]).to(device)
     print(model)
     t = Train(
-        model=model, input=data["input"], loss=data["loss"], optimizer=data["optimizer"]
+        model=model,
+        input=params["input"],
+        loss=params["loss"],
+        optimizer=params["optimizer"],
+        batch_size=params["batch_size"],
     )
-    fl = t.train(n_epochs=100, batch_size=10)
-    print(f"Final loss: {fl}")
+    
+    RESULTS = t.train_test_log(params["epoch"], batch_size=params["batch_size"])
+    print("Results:")
+    print("Average Training Loss: ", RESULTS["avg_train_loss"])
+    print("Average Testing Loss: ", RESULTS["avg_test_loss"])
+    print("Average Training Accuracy: ", RESULTS["avg_train_acc"])
+    print("Average Testing Accuracy: ", RESULTS["avg_test_acc"])
