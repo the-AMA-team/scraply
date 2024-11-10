@@ -402,7 +402,7 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
           </button>
         </div>
       </div>
-      <div className={`flex gap-20 p-20 ${isModalOpen && "opacity-50"}`}>
+      <div className={`flex gap-20 p-20 pt-10 ${isModalOpen && "opacity-50"}`}>
         {/* Toolbox area */}
         <div className="w-36">
           <h3>Layers</h3>
