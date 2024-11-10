@@ -136,6 +136,41 @@ const updateUserProgress = async (
   }
 };
 
+async function downloadFile(config) {
+  await fetch("http://127.0.0.1:5000/generate", {
+    method: "POST",
+    body: JSON.stringify(config),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      return response.blob();
+    })
+    .then((blob) => {
+      // Create a temporary link element
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.style.display = "none";
+      a.href = url;
+      a.download = "generated_notebook.ipynb";
+
+      // Append the link to the body
+      document.body.appendChild(a);
+      a.click();
+
+      // Cleanup
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    })
+    .catch((error) => {
+      console.error("Error downloading file:", error);
+    });
+}
+
 interface BoardProps {
   level: number;
   setShowConfetti: React.Dispatch<React.SetStateAction<boolean>>;
@@ -341,9 +376,7 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
     setIsModalOpen(true);
   };
 
-  useEffect(() => {
-    // document.getElementById("upload_modal")?.showModal();
-  }, []);
+  useEffect(() => {}, []);
 
   // Calculate the stroke-dasharray for the progress circle
   const circleRadius = 16;
@@ -562,7 +595,22 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
                 />
               </div>
             )}
-            <button className="bg-blue-500 py-2 px-4 m-2 rounded-md">
+            <button
+              className="bg-blue-500 py-2 px-4 m-2 rounded-md"
+              onClick={() => {
+                downloadFile(
+                  getConfig(
+                    "pima",
+                    canvasBlocks,
+                    loss,
+                    optimizer,
+                    0.001,
+                    100,
+                    10
+                  )
+                );
+              }}
+            >
               Download Python Notebook
             </button>
           </div>

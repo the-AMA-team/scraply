@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, send_file
 from models import DynamicModel, Train
 from params import are_params_valid
 from flask_cors import CORS
@@ -12,18 +12,17 @@ CORS(app)
 def hello_world():
     return {"data": "hello"}
 
-@app.post('/generate')
+
+@app.route("/generate", methods=["POST"])
 def generate():
     data = request.get_json()
-    inp = data["input"]
-    layers = data["layers"]
-    loss = data["loss"]
-    optimizer = data["optimizer"]
-    n_epochs = data["epoch"]
-    batch_size = data["batch_size"]
 
-    gen = Generate(data)
-    gen.generate_notebook()
+    try:
+        gen = Generate(data)
+        gen.generate_notebook()
+        return send_file("generated_notebook.ipynb")
+    except Exception as e:
+        return {"status": "failed", "error": str(e)}
 
 
 @app.post("/train")
@@ -78,3 +77,17 @@ def train():
     return RESULTS
 
 
+t = {
+    "layers": [
+        {"kind": "Linear", "args": [8, 12]},
+        {"kind": "ReLU"},
+        {"kind": "Linear", "args": [12, 8]},
+        {"kind": "ReLU"},
+        {"kind": "Linear", "args": [8, 1]},
+        {"kind": "Sigmoid"},
+    ],
+    "loss": "BCE",
+    "optimizer": {"kind": "Adam", "lr": 0.001},
+    "epoch": 100,
+    "batch_size": 10,
+}
