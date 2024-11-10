@@ -159,4 +159,4 @@ def train():
         print("Error:", e)
         RESULTS = {"error": str(e)}
 
-    return RESULTS, ADVICE
+    return RESULTS, ADVICE, sad_advice_string
