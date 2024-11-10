@@ -506,7 +506,7 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
                 {isTraining ? "Training..." : "Train"}
               </button>
             </div>
-            {<div>Last Loss: {lastLoss}</div>}
+            {/* {<div>Last Loss: {lastLoss}</div>} */}
           </div>
           <div>
             {trainingRes?.test_losses && (

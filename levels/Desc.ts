@@ -5,24 +5,24 @@ interface LevelDesc {
 
 const LEVEL_DESC: LevelDesc[] = [
   {
-    title: "MNIST Dataset",
+    title: "Pima Dataset",
     prompt:
-      "You are tasked with building a machine learning model to recognize handwritten digits using the MNIST dataset. Your goal is to preprocess the data, train a model, and evaluate its performance.",
+      "You are tasked with building a machine learning model to predict the onset of diabetes using the Pima Diabetes Database. Your goal is to preprocess the data, train a model, and evaluate its performance.",
   },
   {
-    title: "MNIST Dataset",
+    title: "Pima Dataset",
     prompt:
-      "You are tasked with building a machine learning model to recognize handwritten digits using the MNIST dataset. Your goal is to preprocess the data, train a model, and evaluate its performance.",
+      "You are tasked with building a machine learning model to predict the onset of diabetes using the Pima Diabetes Database. Your goal is to preprocess the data, train a model, and evaluate its performance.",
   },
   {
-    title: "MNIST Dataset",
+    title: "Pima Dataset",
     prompt:
-      "You are tasked with building a machine learning model to recognize handwritten digits using the MNIST dataset. Your goal is to preprocess the data, train a model, and evaluate its performance.",
+      "You are tasked with building a machine learning model to predict the onset of diabetes using the Pima Diabetes Database. Your goal is to preprocess the data, train a model, and evaluate its performance.",
   },
   {
-    title: "MNIST Dataset",
+    title: "Pima Dataset",
     prompt:
-      "You are tasked with building a machine learning model to recognize handwritten digits using the MNIST dataset. Your goal is to preprocess the data, train a model, and evaluate its performance.",
+      "You are tasked with building a machine learning model to predict the onset of diabetes using the Pima Diabetes Database. Your goal is to preprocess the data, train a model, and evaluate its performance.",
   },
 ];
 
