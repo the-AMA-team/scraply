@@ -14,6 +14,23 @@ def hello_world():
 
 @app.post("/train")
 def train():
+    # example data
+    #     data = {
+    #     "input": "pima",
+    #     "layers": [
+    #         {"kind": "Linear", "args": (8, 12)},
+    #         {"kind": "ReLU"},
+    #         {"kind": "Linear", "args": (12, 8)},
+    #         {"kind": "ReLU"},
+    #         {"kind": "Linear", "args": (8, 1)},
+    #         {"kind": "Sigmoid"},
+    #     ],
+    #     "loss": "BCE",
+    #     "optimizer": {"kind": "Adam", "lr": 0.001},
+    #     "epoch": 100,
+    #     "batch_size": 10,
+    # }
+
     data = request.get_json()
     inp = data["input"]
     layers = data["layers"]
@@ -26,7 +43,22 @@ def train():
         return {"error": "Invalid parameters"}
 
     model = DynamicModel(layers)
-    t = Train(model, inp, loss, optimizer)
-    f_l = t.train(n_epochs, batch_size)
+    # print(model)
 
-    return {"final_loss": f_l.item()}
+    t = Train(
+        model=model,
+        input=inp,
+        loss=loss,
+        optimizer=optimizer,
+        batch_size=batch_size,
+    )
+
+    RESULTS = t.train_test_log(n_epochs, batch_size)
+
+    # print("Results:")
+    # print("Average Training Loss: ", RESULTS["avg_train_loss"])
+    # print("Average Testing Loss: ", RESULTS["avg_test_loss"])
+    # print("Average Training Accuracy: ", RESULTS["avg_train_acc"])
+    # print("Average Testing Accuracy: ", RESULTS["avg_test_acc"])
+
+    return RESULTS

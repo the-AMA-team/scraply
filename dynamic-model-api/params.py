@@ -116,8 +116,9 @@ ACTIVATIONS = {
 
 
 LAYERS = {
+    "Flatten": nn.Flatten(), # no argumnets for Flatten()
     "Linear": lambda i, o: nn.Linear(i, o),
-    "Conv2D": lambda i, o, k_size: nn.Conv2d(i, o, k_size),
+    "Conv2D": lambda i, o, k_size: nn.Conv2d(i, o, k_size), # i = input channels (1 --> grayscale, 3 --> RGB), o = output channels (number of filters), k_size = kernel size
     "Conv1D": lambda i, o, k_size: nn.Conv1d(i, o, k_size),
     "Conv3D": lambda i, o, k_size: nn.Conv3d(i, o, k_size),
     "LSTM": lambda i, h_size: nn.LSTM(i, h_size),
