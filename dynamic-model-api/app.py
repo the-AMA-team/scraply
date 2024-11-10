@@ -2,6 +2,7 @@ from flask import Flask, request
 from models import DynamicModel, Train
 from params import are_params_valid
 from flask_cors import CORS
+from generate import Generate
 
 app = Flask(__name__)
 CORS(app)
@@ -10,6 +11,19 @@ CORS(app)
 @app.route("/")
 def hello_world():
     return {"data": "hello"}
+
+@app.post('/generate')
+def generate():
+    data = request.get_json()
+    inp = data["input"]
+    layers = data["layers"]
+    loss = data["loss"]
+    optimizer = data["optimizer"]
+    n_epochs = data["epoch"]
+    batch_size = data["batch_size"]
+
+    gen = Generate(data)
+    gen.generate_notebook()
 
 
 @app.post("/train")
@@ -62,3 +76,5 @@ def train():
     # print("Average Testing Accuracy: ", RESULTS["avg_test_acc"])
 
     return RESULTS
+
+
