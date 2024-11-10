@@ -201,9 +201,11 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
   const [trainingRes, setTrainingRes] = useState<any | null>(null);
   const [progress, setProgress] = useState(0);
 
-  const [isModalOpen, setIsModalOpen] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [graphData, setGraphData] = useState<any | null>(null);
+
+  const [advice, setAdvice] = useState("");
 
   console.log(canvasBlocks);
 
@@ -349,17 +351,18 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
       .then((data) => {
         console.log(data);
         // setLastLoss(data["final_loss"]);
-        setTrainingRes(data);
-        setProgress(Math.round(data["avg_test_acc"] * 100) * 0.01);
+        setTrainingRes(data.RESULTS);
+        setProgress(Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01);
+        setAdvice(data.sad_advice_string);
 
-        const testLosses = data["test_losses"].map(
+        const testLosses = data.RESULTS["test_losses"].map(
           (item: number, idx: number) => ({
             x: idx,
             y: item,
           })
         );
 
-        const trainLosses = data["train_losses"].map(
+        const trainLosses = data.RESULTS["train_losses"].map(
           (item: number, idx: number) => ({
             x: idx,
             y: item,
@@ -441,16 +444,15 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
             </div>
           </div>
         </div>
-        <div className="flex justify-center mt-4 text-zinc-400">
-          Suggested change for higher accuracy: Increase the number of neurons
-          in layer 2.
+        <div className="flex justify-center mt-4 px-8 text-center text-blue-500">
+          Advice: {advice}
         </div>
         <div className="flex justify-center mt-4">
           <button
             onClick={() => {
               setIsModalOpen(false);
             }}
-            className="bg-blue-500 text-white px-4 py-2 rounded"
+            className="bg-zinc-700 text-white px-4 py-2 rounded"
           >
             YAY!
           </button>
