@@ -74,9 +74,7 @@ class Train:
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
+            else "mps" if torch.backends.mps.is_available() else "cpu"
         )
         print(f"Using {self.device} device")
 
@@ -223,15 +221,16 @@ class Train:
         avg_test_loss = sum(test_losses) / len(test_losses)
 
         print("Done!")
+        print("slayy2")
         # torch.cuda.empty_cache()
 
         return {
-            "train_losses": train_losses,
-            "test_losses": test_losses,
-            "avg_train_loss": avg_train_loss,
-            "avg_test_loss": avg_test_loss,
-            "avg_train_acc": avg_train_acc,
-            "avg_test_acc": avg_test_acc,
+            "train_losses": "train_losses",
+            "test_losses": "test_losses",
+            "avg_train_loss": "avg_train_loss",
+            "avg_test_loss": "avg_test_loss",
+            "avg_train_acc": "avg_train_acc",
+            "avg_test_acc": "avg_test_acc",
         }
 
         # can add more information to this dictionary, like the saved model, best epochs, etc.

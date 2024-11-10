@@ -137,8 +137,8 @@ def train():
     print(ADVICE)
 
     sad_advice_string = ""
-    sad_advice_string = ADVICE["layers"][-1]
-    print(sad_advice_string)
+    sad_advice_string = ADVICE["layers"][0]["kind"][-1]
+    print("This is the sad string", sad_advice_string)
 
     RESULTS = {}
 
@@ -154,9 +154,16 @@ def train():
             batch_size=batch_size,
         )
 
+        print("slay")
+
         RESULTS = t.train_test_log(n_epochs, batch_size)
+
     except Exception as e:
         print("Error:", e)
         RESULTS = {"error": str(e)}
 
-    return RESULTS, ADVICE, sad_advice_string
+    return {
+        "RESULTS": RESULTS,
+        "ADVICE": ADVICE,
+        "sad_advice_string": sad_advice_string,
+    }
