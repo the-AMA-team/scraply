@@ -52,6 +52,13 @@ const initialBlocks: Block[] = [
     activationFunction: "ReLU",
     neurons: 8,
   },
+  {
+    id: "flatten",
+    label: "Flatten",
+    color: "#FF208F",
+    activationFunction: "ReLU",
+    neurons: 8,
+  },
 ];
 
 const getConfig = (
@@ -156,6 +163,8 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
   const [isTraining, setIsTraining] = useState(false);
   const [lastLoss, setLastLoss] = useState<number | null>(null);
 
+  const [isModalOpen, setIsModalOpen] = useState(true);
+
   console.log(canvasBlocks);
 
   useEffect(() => {
@@ -164,26 +173,31 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
     getUserProgress(level, user.uid).then((attempt) => {
       // convert the json in attempt.archetecture to blocks
       if (attempt?.archetecture) {
-        const jsonLayers = JSON.parse(attempt.archetecture as string).layers;
+        try {
+          const jsonLayers = JSON.parse(attempt.archetecture as string).layers;
 
-        const blocks = [];
+          const blocks = [];
 
-        for (let i = 0; i < jsonLayers.length; i += 2) {
-          const b_: Block = {
-            id: `${jsonLayers[i].kind}-${Math.random()}`,
-            label: jsonLayers[i].kind,
-            neurons: jsonLayers[i].args[0],
-            color: "#20FF8F",
-            activationFunction: jsonLayers[i + 1].kind,
-          };
-          blocks.push(b_);
+          for (let i = 0; i < jsonLayers.length; i += 2) {
+            const b_: Block = {
+              id: `${jsonLayers[i].kind}-${Math.random()}`,
+              label: jsonLayers[i].kind,
+              neurons: jsonLayers[i].args[0],
+              color:
+                initialBlocks.find((item) => item.label === jsonLayers[i].kind)
+                  ?.color || "#20FF8F",
+              activationFunction: jsonLayers[i + 1].kind,
+            };
+            blocks.push(b_);
+          }
+          console.log(blocks);
+          setCanvasBlocks(blocks);
+        } catch (error) {
+          console.error(error);
         }
-        console.log(blocks);
-        setCanvasBlocks(blocks);
       }
       setCurrentAttempt(attempt || null);
 
-      const attemptConfig = JSON.parse(attempt?.archetecture as string);
       setLastLoss(attempt?.lastLoss || null);
     });
   }, [user]);
@@ -300,6 +314,22 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
     setIsTraining(false);
   };
 
+  useEffect(() => {
+    // document.getElementById("upload_modal")?.showModal();
+  }, []);
+  const [progress, setProgress] = useState(0); // initial progress
+
+  useEffect(() => {
+    setTimeout(() => {
+      setProgress(90);
+    }, 1000);
+  }, []);
+
+  // Calculate the stroke-dasharray for the progress circle
+  const circleRadius = 16;
+  const circumference = 2 * Math.PI * circleRadius;
+  const dashArray = `${(progress / 100) * circumference} ${circumference}`;
+
   return (
     <DndContext
       collisionDetection={closestCenter}
@@ -308,7 +338,71 @@ const Board = ({ level, setShowConfetti }: BoardProps) => {
       onDragEnd={handleDragEnd}
       sensors={sensors}
     >
-      <div className="flex gap-20 p-20">
+      <div
+        className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-1/2 w-1/2 bg-zinc-800 z-20 rounded-2xl shadow-xl ${
+          !isModalOpen && "hidden"
+        }`}
+      >
+        <div className="flex justify-center my-4">
+          <div className="w-80 rounded-full">
+            <div className="flex flex-col items-center relative">
+              {/* Progress Circle Container */}
+              <svg className="w-52 h-52 relative" viewBox="0 0 36 36">
+                {/* Background Circle */}
+                <circle
+                  className="text-zinc-700"
+                  strokeWidth="3"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r={circleRadius}
+                  cx="18"
+                  cy="18"
+                />
+                {/* Progress Circle */}
+                <circle
+                  className="text-green-500"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={dashArray}
+                  stroke="currentColor"
+                  fill="transparent"
+                  r={circleRadius}
+                  cx="18"
+                  cy="18"
+                  style={{ transition: "stroke-dasharray 0.3s ease" }}
+                />
+              </svg>
+
+              {/* Centered Image */}
+              <img
+                src="/stars.png"
+                alt="centered-icon"
+                className="absolute w-60 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 rounded-full"
+              />
+
+              {/* Display Progress Percentage */}
+              <div className="mt-2 text-center text-lg font-semibold text-green-500">
+                {progress}% Accuracy Achieved!
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex justify-center mt-4 text-zinc-400">
+          Suggested change for higher accuracy: Increase the number of neurons
+          in layer 2.
+        </div>
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => {
+              setIsModalOpen(false);
+            }}
+            className="bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            YAY!
+          </button>
+        </div>
+      </div>
+      <div className={`flex gap-20 p-20 ${isModalOpen && "opacity-50"}`}>
         {/* Toolbox area */}
         <div className="w-36">
           <h3>Layers</h3>
