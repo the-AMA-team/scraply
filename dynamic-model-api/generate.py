@@ -39,8 +39,104 @@ import torch.optim as optim
 import matplotlib as plt
 from torch.utils.data import DataLoader, TensorDataset, random_split
 import numpy as np
-from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 from sklearn.model_selection import train_test_split
+import pandas as pd
+import torch.optim as optim
+from torchvision import datasets
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+import matplotlib.pyplot as plt
+"""
+
+add_params = f"""\
+
+DATALOADERS = {{
+    "pima": {{
+        "X": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, :-1].values,
+        "y": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, -1].values,
+    }},
+    "MNIST": {{
+        "train": datasets.MNIST(
+            root="data",
+            train=True,
+            download=True,
+            transform=transforms.Compose([transforms.ToTensor()]),
+        ),
+        "test": datasets.MNIST(
+            root="data",
+            train=True,
+            download=True,
+            transform=transforms.Compose([transforms.ToTensor()]),
+        ),
+    }},
+    "FashionMNIST": {{
+        "train": datasets.FashionMNIST(
+            root="data",
+            train=True,
+            download=True,
+            transform=transforms.Compose([transforms.ToTensor()]),
+        ),
+        "test": datasets.FashionMNIST(
+            root="data",
+            train=True,
+            download=True,
+            transform=transforms.Compose([transforms.ToTensor()]),
+        ),
+    }},
+    "CIFAR10": {{
+        "train": datasets.CIFAR10(
+            root="data",
+            train=True,
+            download=True,
+            transform=transforms.Compose([transforms.ToTensor()]),
+        ),
+        "test": datasets.CIFAR10(
+            root="data",
+            train=True,
+            download=True,
+            transform=transforms.Compose([transforms.ToTensor()]),
+        ),
+    }},
+}}
+
+
+ACTIVATIONS = {{
+    "ReLU": nn.ReLU(),
+    "Sigmoid": nn.Sigmoid(),
+    "Tanh": nn.Tanh(),
+    "Softmax": nn.Softmax(),
+    "LeakyReLU": nn.LeakyReLU(),
+    "PReLU": nn.PReLU(),
+}}
+
+
+LAYERS = {{
+    "Flatten": nn.Flatten(), # no argumnets for Flatten()
+    "Linear": lambda i, o: nn.Linear(i, o),
+    "Conv2D": lambda i, o, k_size: nn.Conv2d(i, o, k_size), # i = input channels (1 --> grayscale, 3 --> RGB), o = output channels (number of filters), k_size = kernel size
+    "Conv1D": lambda i, o, k_size: nn.Conv1d(i, o, k_size),
+    "Conv3D": lambda i, o, k_size: nn.Conv3d(i, o, k_size),
+    "LSTM": lambda i, h_size: nn.LSTM(i, h_size),
+    "GRU": lambda i, h_size: nn.GRU(i, h_size),
+    "RNN": lambda i, h_size: nn.RNN(i, h_size),
+}}
+
+
+LOSSES = {{
+    "BCE": nn.BCELoss(),  # binary cross entropy --> 0 or 1 classification models
+    "CrossEntropy": nn.CrossEntropyLoss(),  # multi-class classification models
+    # "MSE": nn.MSELoss() # regression models
+}}
+
+
+OPTIMIZERS = {{
+    "Adam": lambda model_params, lr: optim.Adam(
+        model_params, lr
+    ),  # momentum parameter is optional
+    "AdamW": lambda model_params, lr: optim.AdamW(model_params, lr),
+    "SGD": lambda model_params, lr: optim.SGD(model_params, lr),
+    "RMSprop": lambda model_params, lr: optim.RMSprop(model_params, lr),
+}}
 """
 
 # print(params["layers"])
@@ -323,6 +419,7 @@ if __name__ == "__main__":
         nb = nbf.v4.new_notebook()
         nb.cells.append(nbf.v4.new_code_cell(install_cell))
         nb.cells.append(nbf.v4.new_code_cell(code_cell_1))
+        nb.cells.append(nbf.v4.new_code_cell(add_params))
         nb.cells.append(nbf.v4.new_code_cell(code_cell_2))
         nb.cells.append(nbf.v4.new_code_cell(code_cell_3))
         nb.cells.append(nbf.v4.new_code_cell(code_cell_4))
