@@ -19,7 +19,7 @@ model Attempt {
   user         User   @relation(fields: [userId], references: [id])
   level        Level
   rating       Int
-  archetecture Json
+  archetecture String
   lastLoss     Float
 }
 
@@ -27,4 +27,5 @@ enum Level {
   L1
   L2
   L3
+  L4
 }

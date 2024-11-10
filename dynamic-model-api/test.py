@@ -20,8 +20,11 @@ params = {
     "batch_size": 10, 
 }
 
-response = requests.post(URL, json=params)
+try:
+    response = requests.post(URL, json=params)
 
-# Print the response
-print(f"Status Code: {response.status_code}")
-print(f"Response: {response.json()}")
+    # Print the response
+    print(f"Status Code: {response.status_code}")
+    print(f"Response: {response.json()}")
+except:
+    print("url not found")
