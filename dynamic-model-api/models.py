@@ -65,38 +65,6 @@ class DynamicModel(nn.Module):
 # if we build the prediction to be a class instance is it a good idea to just store it as a bin file???
 
 
-# pima dataset
-
-
-# # 4. Normalize the data (optional but recommended for neural networks)
-# # scaler = StandardScaler()
-# # X_train = scaler.fit_transform(X_train)
-# # X_test = scaler.transform(X_test)
-
-# # 5. Convert the data into torch tensors
-# X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
-# y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(
-#     -1, 1
-# )  # Reshape for binary classification
-# X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
-# y_test_tensor = torch.tensor(y_test, dtype=torch.float32).reshape(-1, 1)
-
-# # 6. Create Dataset objects
-# train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-# test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
-
-# # 7. Create DataLoader objects for batching
-# batch_size = 32  # You can adjust the batch size
-# train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-# test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
-# # Example usage:
-# for batch_idx, (X_batch, y_batch) in enumerate(train_loader):
-#     print(
-#         f"Batch {batch_idx+1} - X_batch shape: {X_batch.shape}, y_batch shape: {y_batch.shape}"
-#     )
-
-
 class Train:
     def __init__(self, model, input, loss, optimizer, batch_size):
         # validate data inputs before this point, each valid key should exist and errors for invalid
@@ -143,9 +111,7 @@ class Train:
                 test_dataset, batch_size=batch_size, shuffle=False
             )
         else:
-            train_set = ds[
-                "train"
-            ]  # ds["train"] is a dataset object, already transformed into tensor
+            train_set = ds["train"]
             test_set = ds["test"]
             self.train_loader = DataLoader(
                 train_set, batch_size=batch_size, shuffle=True
@@ -162,23 +128,6 @@ class Train:
         self.final_loss = -1
 
     def train(self, n_epochs, batch_size):
-        # if self.input == "pima":
-        #     # PIMA TRAINING FUNCTION
-        #     for epoch in range(n_epochs):
-        #         for i in range(0, len(self.X), batch_size):
-        #             batchX = self.X[i : i + batch_size]
-        #             y_pred = self.model(batchX)
-        #             y_batch = self.Y[i : i + batch_size]
-        #             loss = self.loss_fn(y_pred, y_batch)
-        #             self.optimizer.zero_grad()
-        #             loss.backward()
-        #             self.optimizer.step()
-
-        #             self.final_loss = loss
-
-        #     return self.final_loss
-        # else:
-        #     # IMAGE DATASETS TRAINING FUNCTION
         size = len(self.train_loader.dataset)
         # num_batches = len(self.train_loader)
         self.model.train()
@@ -196,10 +145,15 @@ class Train:
             self.optimizer.step()
             self.optimizer.zero_grad()
             train_loss += loss.item()
-            # Calculate accuracy
-            _, predicted = torch.max(
-                pred, 1
-            )  # Get the predicted class (index with max value)
+
+            if self.input == "pima":
+                predicted = (
+                    pred > 0.5
+                ).float()  # apply threshold for binary classification
+            else:
+                _, predicted = torch.max(pred, 1)  # for multi-class classification
+
+            # Get the predicted class (index with max value)
             correct += (predicted == y).sum().item()  # Count correct predictions
             total += y.size(0)  # Count total predictions
 
@@ -214,11 +168,6 @@ class Train:
         return avg_train_loss, avg_acc
 
     def test(self, n_epochs, batch_size):
-        # if self.input == "pima":
-        #     # PIMA TRAINING FUNCTION
-        #     # do nothing, because pima currently does not have a test_dataset (only has X, y dataset --> has not been split yet)
-        #     print("PIMA is not configured to have a test dataset yet")
-        # else:
         size = len(self.test_loader.dataset)
         num_batches = len(self.test_loader)
         self.model.eval()
@@ -230,9 +179,13 @@ class Train:
                 # Compute prediction error
                 pred = self.model(X)
                 test_loss += self.loss_fn(pred, y).item()
-                correct += (
-                    (pred.argmax(1) == y).type(torch.float).sum().item()
-                )  # for accuracy
+                if self.input == "pima":
+                    predicted = (pred > 0.5).type(torch.float)
+                    correct += (predicted == y).sum().item()
+                else:
+                    correct += (
+                        (pred.argmax(1) == y).type(torch.float).sum().item()
+                    )  # for accuracy
 
         test_loss /= num_batches
         correct /= size
@@ -296,7 +249,7 @@ if __name__ == "__main__":
         ],
         "loss": "BCE",
         "optimizer": {"kind": "Adam", "lr": 0.001},
-        "epoch": 3,
+        "epoch": 5,
         "batch_size": 10,
     }
 
