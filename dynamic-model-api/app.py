@@ -1,8 +1,9 @@
-from flask import Flask, request
+from flask import Flask, request, send_file
 from models import DynamicModel, Train
 from params import are_params_valid
 from IdealArch import IDEAL_ARCH
 from flask_cors import CORS
+from generate import Generate
 
 app = Flask(__name__)
 CORS(app)
@@ -11,6 +12,18 @@ CORS(app)
 @app.route("/")
 def hello_world():
     return {"data": "hello"}
+
+
+@app.route("/generate", methods=["POST"])
+def generate():
+    data = request.get_json()
+
+    try:
+        gen = Generate(data)
+        gen.generate_notebook()
+        return send_file("generated_notebook.ipynb")
+    except Exception as e:
+        return {"status": "failed", "error": str(e)}
 
 
 @app.post("/train")
@@ -60,6 +73,7 @@ def train():
     else:
         Lkind_advice_array[-1] = ""
 
+<<<<<<< HEAD
     print(Lkind_advice_array)
 
     # CHECK LAYER TYPES AGAINST IDEAL ARCHITECTURE
@@ -164,3 +178,22 @@ def train():
 #     "epoch": 100,
 #     "batch_size": 10
 # }'
+=======
+    return RESULTS
+
+
+t = {
+    "layers": [
+        {"kind": "Linear", "args": [8, 12]},
+        {"kind": "ReLU"},
+        {"kind": "Linear", "args": [12, 8]},
+        {"kind": "ReLU"},
+        {"kind": "Linear", "args": [8, 1]},
+        {"kind": "Sigmoid"},
+    ],
+    "loss": "BCE",
+    "optimizer": {"kind": "Adam", "lr": 0.001},
+    "epoch": 100,
+    "batch_size": 10,
+}
+>>>>>>> 358131a6a11c75e161fc6937883112108457423d
