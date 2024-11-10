@@ -24,11 +24,10 @@ const Page = (props: PageProps) => {
       <div className="relative z-10 p-28 pt-72">
         <div className="font-bold text-6xl">Scraply</div>
         <div className="w-2/3 text-zinc-300 pt-2">
-          Something never seen before in education. DeepCraft takes DeepLearning
-          and makes it simple to understand using a beautiful scratch-like user
-          interface. Run custom deep learning models without any code as you try
-          to lower your losses and increase your accuracy, with each epoch comes
-          triumph!
+          Making deep learning easier for beginners: train models using a
+          scratch-like user interface in a gamified environment. Drag-and-drop
+          "scraps" to create a model, train it, and download a custom Jupyter
+          Notebook of your own neural network.
         </div>
         <button
           onClick={handleGoogleSignIn}
