@@ -39,11 +39,11 @@ const Page = (props: PageProps) => {
     </div>
   );
 
-  // return (
-  //   <div>
-  //     {user && <p> User: {user.displayName}</p>}
-  //     {user && <button onClick={handleGoogleSignOut}>Log Out</button>}
-  //   </div>
+  //   return (
+  //     <div>
+  //       {user && <p> User: {user.displayName}</p>}
+  //       {user && <button onClick={handleGoogleSignOut}>Log Out</button>}
+  //     </div>
   // );
 };
 

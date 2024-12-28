@@ -3,12 +3,14 @@ import React, { useEffect, useState } from "react";
 import LEVEL_DESC from "../../../../levels/Desc";
 import Board from "./Board";
 import ReactConfetti from "react-confetti";
+import { useUser } from "@/contexts/UserContext";
 
 interface LevelProps {
   level: number;
 }
 
 const Level = ({ level }: LevelProps) => {
+  const { user, handleGoogleSignOut } = useUser()!;
   const [runConfetti, setRunConfetti] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -31,6 +33,15 @@ const Level = ({ level }: LevelProps) => {
       />
 
       <div className="pt-10 px-16">
+        {user && (
+          <div className="flex justify-end">
+            {
+              <button onClick={handleGoogleSignOut} className="mx-2">
+                Log Out {user.displayName}
+              </button>
+            }
+          </div>
+        )}
         <div className="text-3xl">Level {level}</div>
         <div className="text-xl">{LEVEL_DESC[level - 1].title}</div>
         <div className="text-md w-1/2 text-zinc-300">
