@@ -1,23 +1,9 @@
-"use client";
+import Link from "next/link";
 
-import { redirect } from "next/navigation";
-import { useEffect } from "react";
-
-interface PageProps {}
-
-const Page = (props: PageProps) => {
+export default function HomePage() {
   return (
-    <div className="relative text-white bg-zinc-900 h-screen text-center text-3xl font-bold">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
       Scraply
-    </div>
+    </main>
   );
-
-  //   return (
-  //     <div>
-  //       {user && <p> User: {user.displayName}</p>}
-  //       {user && <button onClick={handleGoogleSignOut}>Log Out</button>}
-  //     </div>
-  // );
-};
-
-export default Page;
+}
