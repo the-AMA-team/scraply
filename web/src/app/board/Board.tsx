@@ -294,7 +294,7 @@ const Board = (props: BoardProps) => {
             label={activeBlock.label}
             color={activeBlock.color}
             id={activeBlock.id}
-            canvasBlocks={canvasBlocks}
+            block={canvasBlocks.find((b) => b.id === activeBlock.id)!}
             setCanvasBlocks={setCanvasBlocks}
           />
         )}

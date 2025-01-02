@@ -33,7 +33,7 @@ export const BLOCKS: UILayer[] = [
     id: "flatten",
     label: "Flatten",
     color: "#FF208F",
-    activationFunction: "ReLU",
+    activationFunction: "",
     neurons: 8,
   },
 ];

@@ -19,9 +19,12 @@ export const getConfig = (
       kind: block.label,
       args: [currentNeuron, nextNeuron],
     });
-    layers.push({
-      kind: block.activationFunction,
-    });
+
+    if (block.activationFunction) {
+      layers.push({
+        kind: block.activationFunction,
+      });
+    }
   }
 
   const config = {

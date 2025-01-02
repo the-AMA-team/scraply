@@ -7,6 +7,7 @@ export interface UILayer {
 }
 
 export type ActivationFunction =
+  | ""
   | "ReLU"
   | "Sigmoid"
   | "Tanh"

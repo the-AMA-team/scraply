@@ -46,7 +46,7 @@ const SortableBlock = ({
         label={label}
         color={color}
         id={id}
-        canvasBlocks={layers}
+        block={layers.find((block) => block.id === id)!}
         setCanvasBlocks={setLayers}
       />
     </div>
