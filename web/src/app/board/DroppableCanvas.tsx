@@ -5,11 +5,11 @@ import {
   SortableContext,
 } from "@dnd-kit/sortable";
 import SortableBlock from "./SortableBlock";
-import { Layer } from "../../types";
+import { UILayer } from "../../types";
 
 interface DroppableCanvasProps {
-  layers: Layer[];
-  setCanvasBlocks: React.Dispatch<React.SetStateAction<Layer[]>>;
+  layers: UILayer[];
+  setCanvasBlocks: React.Dispatch<React.SetStateAction<UILayer[]>>;
 }
 
 const DroppableCanvas = ({
@@ -26,7 +26,7 @@ const DroppableCanvas = ({
       className="z-10 flex h-5/6 items-center whitespace-nowrap rounded-3xl border-2 border-dashed border-zinc-600 bg-zinc-900 p-8 px-28"
     >
       <SortableContext
-        items={blocks.map((block: Layer) => block.id)}
+        items={blocks.map((block: UILayer) => block.id)}
         strategy={horizontalListSortingStrategy}
       >
         {blocks.map((block) => (
@@ -35,8 +35,6 @@ const DroppableCanvas = ({
             id={block.id}
             label={block.label}
             color={block.color}
-            activationFunction={block.activationFunction}
-            neurons={block.neurons}
             layers={blocks}
             setLayers={setCanvasBlocks}
           />

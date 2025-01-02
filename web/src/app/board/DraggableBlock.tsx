@@ -1,12 +1,16 @@
 "use client";
-import { useEffect } from "react";
-import { Layer } from "../../types";
 import { useDraggable } from "@dnd-kit/core";
 
-const DraggableBlock = ({ id, label, color, activationFunction: _ }: Layer) => {
+interface DraggableBlockProps {
+  id: string;
+  label: string;
+  color: string;
+}
+
+const DraggableBlock = ({ id, label, color }: DraggableBlockProps) => {
   const {
     active,
-    attributes: __,
+    attributes: _,
     listeners,
     setNodeRef,
     transform,

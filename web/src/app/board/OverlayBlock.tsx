@@ -1,13 +1,13 @@
 "use client";
 import React from "react";
-import { Layer } from "~/types";
+import { ActivationFunction, UILayer } from "~/types";
 
 interface OverlayBlockProps {
   id: string;
   label: string;
   color: string;
-  canvasBlocks: Layer[];
-  setCanvasBlocks: React.Dispatch<React.SetStateAction<Layer[]>>;
+  canvasBlocks: UILayer[];
+  setCanvasBlocks: React.Dispatch<React.SetStateAction<UILayer[]>>;
 }
 
 const OverlayBlock = ({
@@ -50,7 +50,11 @@ const OverlayBlock = ({
               setCanvasBlocks((prevBlocks) =>
                 prevBlocks.map((block) =>
                   block.id === id
-                    ? { ...block, activationFunction: newActivationFunction }
+                    ? {
+                        ...block,
+                        activationFunction:
+                          newActivationFunction as ActivationFunction,
+                      }
                     : block,
                 ),
               );

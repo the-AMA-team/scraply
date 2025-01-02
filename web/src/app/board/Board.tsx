@@ -15,122 +15,17 @@ import {
 import { arrayMove } from "@dnd-kit/sortable";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
-import { Layer } from "../../types";
+import { UILayer } from "../../types";
 import OverlayBlock from "./OverlayBlock";
-
-const BLOCKS: Layer[] = [
-  {
-    id: "linear",
-    label: "Linear",
-    color: "#20FF8F",
-    activationFunction: "ReLU",
-    neurons: 8,
-  },
-  {
-    id: "conv",
-    label: "Conv",
-    color: "#FFD620",
-    activationFunction: "ReLU",
-    neurons: 8,
-  },
-  {
-    id: "rnn",
-    label: "RNN",
-    color: "#FF8C20",
-    activationFunction: "ReLU",
-    neurons: 8,
-  },
-  {
-    id: "gru",
-    label: "GRU",
-    color: "#FF4920",
-    activationFunction: "ReLU",
-    neurons: 8,
-  },
-  {
-    id: "flatten",
-    label: "Flatten",
-    color: "#FF208F",
-    activationFunction: "ReLU",
-    neurons: 8,
-  },
-];
-
-const getConfig = (
-  input: string,
-  blocks: Layer[],
-  loss: string,
-  optimizer: string,
-  learningRate: number,
-  epoch: number,
-  batch_size: number,
-) => {
-  const layers = [];
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i]!;
-
-    const currentNeuron = block.neurons;
-    const nextNeuron = blocks[i + 1]?.neurons || 1; // Default to 1 if no next block, could change based on the dataset
-    layers.push({
-      kind: block.label,
-      args: [currentNeuron, nextNeuron],
-    });
-    layers.push({
-      kind: block.activationFunction,
-    });
-  }
-
-  const config = {
-    input,
-    layers,
-    loss,
-    optimizer: { kind: optimizer, lr: learningRate },
-    epoch,
-    batch_size,
-  };
-
-  return config;
-};
-
-const downloadFile = async (config: any) => {
-  await fetch("http://127.0.0.1:5000/generate", {
-    method: "POST",
-    body: JSON.stringify(config),
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      return response.blob();
-    })
-    .then((blob) => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.style.display = "none";
-      a.href = url;
-      a.download = "generated_notebook.ipynb";
-
-      document.body.appendChild(a);
-      a.click();
-
-      // clean up
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    })
-    .catch((error) => {
-      console.error("Error downloading file:", error);
-    });
-};
+import { BLOCKS } from "./BLOCKS";
+import { downloadFile, startTraining, getConfig } from "~/util/board";
 
 interface BoardProps {}
 
 const Board = (props: BoardProps) => {
-  const [canvasBlocks, setCanvasBlocks] = useState<Layer[]>([]);
+  const [canvasBlocks, setCanvasBlocks] = useState<UILayer[]>([]);
 
-  const [activeBlock, setActiveBlock] = useState<Layer | null>(null);
+  const [activeBlock, setActiveBlock] = useState<UILayer | null>(null);
 
   // running configs
   const [loss, setLoss] = useState("BCE");
@@ -140,13 +35,10 @@ const Board = (props: BoardProps) => {
   const [batchSize, setBatchSize] = useState(10);
 
   const [isTraining, setIsTraining] = useState(false);
-  const [lastLoss, setLastLoss] = useState<number | null>(null);
   const [trainingRes, setTrainingRes] = useState<any | null>(null);
   const [progress, setProgress] = useState(0);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const [advice, setAdvice] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -159,10 +51,10 @@ const Board = (props: BoardProps) => {
   const handleDragStart = (event: DragStartEvent) => {
     const { id } = event.active;
     const block =
-      (BLOCKS.find((item) => item.id === id) as Layer) ||
+      (BLOCKS.find((item) => item.id === id) as UILayer) ||
       (canvasBlocks.find(
         (item: { id: UniqueIdentifier }) => item.id === id,
-      ) as Layer);
+      ) as UILayer);
     setActiveBlock(block);
   };
 
@@ -197,41 +89,6 @@ const Board = (props: BoardProps) => {
     }
 
     setActiveBlock(null);
-  };
-
-  const startTraining = async () => {
-    setIsTraining(true);
-    const config = getConfig(
-      "pima",
-      canvasBlocks,
-      loss,
-      optimizer,
-      learningRate,
-      epochs,
-      batchSize,
-    );
-    console.log(config);
-
-    await fetch("http://127.0.0.1:5000/train", {
-      method: "POST",
-      body: JSON.stringify(config),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => {
-        return res.json();
-      })
-      .then((data) => {
-        console.log(data);
-        setLastLoss(data["final_loss"]);
-        setTrainingRes(data.RESULTS);
-        setProgress(Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01);
-        setAdvice(data.sad_advice_string);
-      });
-
-    setIsTraining(false);
-    setIsModalOpen(true);
   };
 
   const circleRadius = 16;
@@ -285,13 +142,10 @@ const Board = (props: BoardProps) => {
               />
 
               <div className="mt-2 text-center text-lg font-semibold text-green-500">
-                {progress}% Accuracy Achieved!
+                {Math.round(progress)}% Accuracy Achieved!
               </div>
             </div>
           </div>
-        </div>
-        <div className="mt-4 flex justify-center px-8 text-center text-blue-500">
-          Advice: {advice}
         </div>
         <div className="mt-4 flex justify-center">
           <button
@@ -315,8 +169,6 @@ const Board = (props: BoardProps) => {
                 id={block.id}
                 label={block.label}
                 color={block.color}
-                activationFunction={block.activationFunction}
-                neurons={block.neurons}
               />
             ))}
           </div>
@@ -385,12 +237,33 @@ const Board = (props: BoardProps) => {
                 } ring-indigo-500 duration-300 ${
                   isTraining && "animate-pulse"
                 }`}
-                onClick={startTraining}
+                onClick={() => {
+                  setIsTraining(true);
+
+                  startTraining(
+                    getConfig(
+                      "pima",
+                      canvasBlocks,
+                      loss,
+                      optimizer,
+                      learningRate,
+                      epochs,
+                      batchSize,
+                    ),
+                  ).then((data: any) => {
+                    setTrainingRes(data.RESULTS);
+                    setProgress(
+                      Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
+                    );
+                    setIsTraining(false);
+                    setIsModalOpen(true);
+                  });
+                }}
               >
                 {isTraining ? "Training..." : "Train"}
               </button>
             </div>
-            {<div>Last Loss: {lastLoss}</div>}
+            {<div>Results: {JSON.stringify(trainingRes)}</div>}
           </div>
           <div>
             <button
