@@ -18,13 +18,12 @@ import DroppableCanvas from "./DroppableCanvas";
 import { UILayer } from "../../types";
 import OverlayBlock from "./OverlayBlock";
 import { BLOCKS } from "./BLOCKS";
-import { downloadFile, startTraining, getConfig } from "~/util/board";
+import { downloadFile, startTraining, getConfig } from "~/util/board.util";
 
 interface BoardProps {}
 
 const Board = (props: BoardProps) => {
   const [canvasBlocks, setCanvasBlocks] = useState<UILayer[]>([]);
-
   const [activeBlock, setActiveBlock] = useState<UILayer | null>(null);
 
   // running configs
