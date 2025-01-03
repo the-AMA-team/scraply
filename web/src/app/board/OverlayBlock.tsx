@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { useBoardStore } from "~/state/boardStore";
 import { ActivationFunction, UILayer } from "~/types";
 
 interface OverlayBlockProps {
@@ -7,16 +8,10 @@ interface OverlayBlockProps {
   label: string;
   color: string;
   block: UILayer;
-  setCanvasBlocks: React.Dispatch<React.SetStateAction<UILayer[]>>;
 }
 
-const OverlayBlock = ({
-  id,
-  label,
-  color,
-  block,
-  setCanvasBlocks,
-}: OverlayBlockProps) => {
+const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
+  const { changeActivationFunction, changeNeurons } = useBoardStore();
   return (
     <div
       className={`mr-1 cursor-grab rounded-2xl px-10 py-20 text-center ring-1 ring-zinc-100`}
@@ -29,11 +24,7 @@ const OverlayBlock = ({
         onChange={(e) => {
           const newNeurons = parseInt(e.target.value);
           if (newNeurons < 1) return;
-          setCanvasBlocks((prevBlocks) =>
-            prevBlocks.map((block) =>
-              block.id === id ? { ...block, neurons: newNeurons } : block,
-            ),
-          );
+          changeNeurons(id, newNeurons);
         }}
       />
       <div className="text-xl font-medium">{label}</div>
@@ -45,16 +36,9 @@ const OverlayBlock = ({
               value={block?.activationFunction as string}
               onChange={(e) => {
                 const newActivationFunction = e.target.value;
-                setCanvasBlocks((prevBlocks) =>
-                  prevBlocks.map((block) =>
-                    block.id === id
-                      ? {
-                          ...block,
-                          activationFunction:
-                            newActivationFunction as ActivationFunction,
-                        }
-                      : block,
-                  ),
+                changeActivationFunction(
+                  id,
+                  newActivationFunction as ActivationFunction,
                 );
               }}
             >

@@ -6,16 +6,12 @@ import {
 } from "@dnd-kit/sortable";
 import SortableBlock from "./SortableBlock";
 import { UILayer } from "../../types";
+import { useBoardStore } from "~/state/boardStore";
 
-interface DroppableCanvasProps {
-  layers: UILayer[];
-  setCanvasBlocks: React.Dispatch<React.SetStateAction<UILayer[]>>;
-}
+interface DroppableCanvasProps {}
 
-const DroppableCanvas = ({
-  layers: blocks,
-  setCanvasBlocks,
-}: DroppableCanvasProps) => {
+const DroppableCanvas = ({}: DroppableCanvasProps) => {
+  const { canvasBlocks } = useBoardStore();
   const { setNodeRef } = useDroppable({
     id: "canvas",
   });
@@ -26,17 +22,15 @@ const DroppableCanvas = ({
       className="z-10 flex h-5/6 items-center whitespace-nowrap rounded-3xl border-2 border-dashed border-zinc-600 bg-zinc-900 p-8 px-28"
     >
       <SortableContext
-        items={blocks.map((block: UILayer) => block.id)}
+        items={canvasBlocks.map((block: UILayer) => block.id)}
         strategy={horizontalListSortingStrategy}
       >
-        {blocks.map((block) => (
+        {canvasBlocks.map((block) => (
           <SortableBlock
             key={block.id}
             id={block.id}
             label={block.label}
             color={block.color}
-            layers={blocks}
-            setLayers={setCanvasBlocks}
           />
         ))}
       </SortableContext>

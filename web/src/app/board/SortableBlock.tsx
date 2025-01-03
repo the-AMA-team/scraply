@@ -3,22 +3,16 @@ import { UILayer } from "../../types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import OverlayBlock from "./OverlayBlock";
+import { useBoardStore } from "~/state/boardStore";
 
 interface SortableBlockProps {
   id: string;
   label: string;
   color: string;
-  layers: UILayer[];
-  setLayers: React.Dispatch<React.SetStateAction<UILayer[]>>;
 }
 
-const SortableBlock = ({
-  id,
-  label,
-  color,
-  layers,
-  setLayers,
-}: SortableBlockProps) => {
+const SortableBlock = ({ id, label, color }: SortableBlockProps) => {
+  const { canvasBlocks } = useBoardStore();
   const {
     attributes,
     listeners,
@@ -46,8 +40,7 @@ const SortableBlock = ({
         label={label}
         color={color}
         id={id}
-        block={layers.find((block) => block.id === id)!}
-        setCanvasBlocks={setLayers}
+        block={canvasBlocks.find((block) => block.id === id)!}
       />
     </div>
   );

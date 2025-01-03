@@ -2,29 +2,21 @@
 import React, { useState } from "react";
 import {
   DndContext,
-  DragEndEvent,
-  DragOverEvent,
   DragOverlay,
-  DragStartEvent,
   PointerSensor,
-  UniqueIdentifier,
   closestCenter,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
-import { UILayer } from "../../types";
 import OverlayBlock from "./OverlayBlock";
 import { BLOCKS } from "./BLOCKS";
 import { downloadFile, startTraining, getConfig } from "~/util/board.util";
+import { useBoardStore } from "~/state/boardStore";
 
-interface BoardProps {}
-
-const Board = (props: BoardProps) => {
-  const [canvasBlocks, setCanvasBlocks] = useState<UILayer[]>([]);
-  const [activeBlock, setActiveBlock] = useState<UILayer | null>(null);
+const Board = () => {
+  const { canvasBlocks, activeBlock, drag } = useBoardStore();
 
   // running configs
   const [loss, setLoss] = useState("BCE");
@@ -47,49 +39,6 @@ const Board = (props: BoardProps) => {
     }),
   );
 
-  const handleDragStart = (event: DragStartEvent) => {
-    const { id } = event.active;
-    const block =
-      (BLOCKS.find((item) => item.id === id) as UILayer) ||
-      (canvasBlocks.find(
-        (item: { id: UniqueIdentifier }) => item.id === id,
-      ) as UILayer);
-    setActiveBlock(block);
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-
-    if (
-      over &&
-      active.id !== over.id &&
-      canvasBlocks.some((block) => block.id === active.id)
-    ) {
-      const oldIndex = canvasBlocks.findIndex(
-        (block) => block.id === active.id,
-      );
-      const newIndex = canvasBlocks.findIndex((block) => block.id === over.id);
-      setCanvasBlocks((blocks) => arrayMove(blocks, oldIndex, newIndex));
-    }
-  };
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { over } = event;
-
-    // Log the drop position
-    console.log("Dropped item over target:", over);
-
-    if (over && over.id === "canvas" && activeBlock) {
-      const newBlock = {
-        ...activeBlock,
-        id: `${activeBlock.id}-${Date.now()}`,
-      }; // Ensure unique ID for each new block
-      setCanvasBlocks((prevBlocks) => [...prevBlocks, newBlock]);
-    }
-
-    setActiveBlock(null);
-  };
-
   const circleRadius = 16;
   const circumference = 2 * Math.PI * circleRadius;
   const dashArray = `${(progress / 100) * circumference} ${circumference}`;
@@ -97,9 +46,9 @@ const Board = (props: BoardProps) => {
   return (
     <DndContext
       collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
+      onDragStart={drag.start}
+      onDragOver={drag.over}
+      onDragEnd={drag.end}
       sensors={sensors}
     >
       <div
@@ -176,10 +125,7 @@ const Board = (props: BoardProps) => {
         {/* Canvas area */}
         <div className="flex-grow">
           <h3>Canvas</h3>
-          <DroppableCanvas
-            layers={canvasBlocks}
-            setCanvasBlocks={setCanvasBlocks}
-          />
+          <DroppableCanvas />
         </div>
 
         <div className="">
@@ -294,7 +240,6 @@ const Board = (props: BoardProps) => {
             color={activeBlock.color}
             id={activeBlock.id}
             block={canvasBlocks.find((b) => b.id === activeBlock.id)!}
-            setCanvasBlocks={setCanvasBlocks}
           />
         )}
       </DragOverlay>
