@@ -22,14 +22,16 @@ function Toggle({
       {[option1, option2].map((option) => (
         <div
           key={option}
-          className={`cursor-pointer rounded-lg px-6 py-1 ${
+          className={`cursor-pointer rounded-lg px-6 py-1 capitalize ${
             selected === option && `bg-${color}-600 text-white`
           }`}
           onClick={() => {
             setSelected(option);
           }}
         >
-          {option}
+          {/* Title case */}
+          {String(option).charAt(0).toUpperCase() +
+            String(option).slice(1).toLowerCase()}
         </div>
       ))}
     </div>
