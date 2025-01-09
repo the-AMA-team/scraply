@@ -8,7 +8,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { createStoreWithProducer } from "@xstate/store";
 import { useSelector } from "@xstate/store/react";
 import { produce } from "immer";
-import { BLOCKS } from "~/app/board/BLOCKS";
+import { BLOCKS } from "~/util/BLOCKS";
 import { ActivationFunction, UILayer } from "~/types";
 
 const boardStore = createStoreWithProducer(produce, {

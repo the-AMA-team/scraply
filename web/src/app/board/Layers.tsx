@@ -9,7 +9,7 @@ import {
 import React, { useState } from "react";
 import { useBoardStore } from "~/state/boardStore";
 import { startTraining, downloadFile, getConfig } from "~/util/board.util";
-import { BLOCKS } from "./BLOCKS";
+import { BLOCKS } from "../../util/BLOCKS";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
