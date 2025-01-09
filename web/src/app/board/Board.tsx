@@ -1,249 +1,48 @@
 "use client";
 import React, { useState } from "react";
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import DraggableBlock from "./DraggableBlock";
-import DroppableCanvas from "./DroppableCanvas";
-import OverlayBlock from "./OverlayBlock";
-import { BLOCKS } from "./BLOCKS";
-import { downloadFile, startTraining, getConfig } from "~/util/board.util";
-import { useBoardStore } from "~/state/boardStore";
+import Toggle from "../_components/Toggle";
+import Layers from "./Layers";
 
 const Board = () => {
-  const { canvasBlocks, activeBlock, drag } = useBoardStore();
+  const [mode, setMode] = useState<"DATA" | "LAYERS">("DATA");
 
-  // running configs
-  const [loss, setLoss] = useState("BCE");
-  const [optimizer, setOptimizer] = useState("Adam");
-  const [learningRate, setLearningRate] = useState(0.001);
-  const [epochs, setEpochs] = useState(100);
-  const [batchSize, setBatchSize] = useState(10);
+  // global layer state
+  const lossState = useState("BCE");
+  const optimizerState = useState("Adam");
+  const learningRateState = useState(0.001);
+  const epochState = useState(100);
+  const batchSizeState = useState(10);
 
-  const [isTraining, setIsTraining] = useState(false);
-  const [trainingRes, setTrainingRes] = useState<any | null>(null);
-  const [progress, setProgress] = useState(0);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-  );
-
-  const circleRadius = 16;
-  const circumference = 2 * Math.PI * circleRadius;
-  const dashArray = `${(progress / 100) * circumference} ${circumference}`;
+  const isTrainingState = useState(false);
+  const trainingResState = useState<any | null>(null);
+  const progressState = useState(0);
 
   return (
-    <DndContext
-      collisionDetection={closestCenter}
-      onDragStart={drag.start}
-      onDragOver={drag.over}
-      onDragEnd={drag.end}
-      sensors={sensors}
-    >
-      <div
-        className={`absolute left-1/2 top-1/2 z-20 h-1/2 w-1/2 -translate-x-1/2 -translate-y-1/2 transform rounded-2xl bg-zinc-800 shadow-xl ${
-          !isModalOpen && "hidden"
-        }`}
-      >
-        <div className="my-4 flex justify-center">
-          <div className="w-80 rounded-full">
-            <div className="relative flex flex-col items-center">
-              <svg className="relative h-52 w-52" viewBox="0 0 36 36">
-                <circle
-                  className="text-zinc-700"
-                  strokeWidth="3"
-                  stroke="currentColor"
-                  fill="transparent"
-                  r={circleRadius}
-                  cx="18"
-                  cy="18"
-                />
-                <circle
-                  className="text-green-500"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeDasharray={dashArray}
-                  stroke="currentColor"
-                  fill="transparent"
-                  r={circleRadius}
-                  cx="18"
-                  cy="18"
-                  style={{ transition: "stroke-dasharray 0.3s ease" }}
-                />
-              </svg>
-
-              <img
-                src="/stars.png"
-                alt="centered-icon"
-                className="absolute left-1/2 top-1/2 w-60 -translate-x-1/2 -translate-y-1/2 transform rounded-full"
-              />
-
-              <div className="mt-2 text-center text-lg font-semibold text-green-500">
-                {Math.round(progress)}% Accuracy Achieved!
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="mt-4 flex justify-center">
-          <button
-            onClick={() => {
-              setIsModalOpen(false);
-            }}
-            className="rounded bg-zinc-700 px-4 py-2 text-white"
-          >
-            YAY!
-          </button>
-        </div>
+    <div>
+      <div className="flex justify-center p-4">
+        <Toggle
+          color="blue"
+          option1="DATA"
+          option2="LAYERS"
+          selected={mode}
+          setSelected={setMode as React.Dispatch<React.SetStateAction<string>>}
+        />
       </div>
-      <div className={`flex gap-20 p-20 pt-10 ${isModalOpen && "opacity-50"}`}>
-        {/* Toolbox area */}
-        <div className="w-36">
-          <h3>Scraps</h3>
-          <div className="rounded-xl bg-zinc-800 py-1">
-            {BLOCKS.map((block) => (
-              <DraggableBlock
-                key={block.id}
-                id={block.id}
-                label={block.label}
-                color={block.color}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Canvas area */}
-        <div className="flex-grow">
-          <h3>Canvas</h3>
-          <DroppableCanvas />
-        </div>
-
-        <div className="">
-          <h3>Run</h3>
-          <div className="rounded-lg bg-zinc-800 p-1 px-2 py-1 text-sm">
-            <div className="my-1 flex">
-              Loss:{" "}
-              <select
-                className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
-                value={loss}
-                onChange={(e) => setLoss(e.target.value)}
-              >
-                <option value="BCE">BCE</option>
-                <option value="CrossEntropy">CrossEntropy</option>
-              </select>
-            </div>
-            <div className="my-1 flex">
-              Optimizer:{" "}
-              <select
-                className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
-                value={optimizer}
-                onChange={(e) => setOptimizer(e.target.value)}
-              >
-                <option value="Adam">Adam</option>
-                <option value="AdamW">AdamW</option>
-                <option value="SGD">SGD</option>
-                <option value="RMSprop">RMSprop</option>
-              </select>
-            </div>
-            <div className="my-1 flex">
-              Epochs:{" "}
-              <input
-                type="number"
-                className="mx-1 w-14 rounded bg-zinc-700 p-1 text-right outline-none"
-                value={epochs}
-                onChange={(e) => setEpochs(parseInt(e.target.value))}
-              />
-            </div>
-            <div className="my-1 flex">
-              Batch Size:{" "}
-              <input
-                type="number"
-                className="mx-1 w-14 rounded bg-zinc-700 p-1 text-right outline-none"
-                value={batchSize}
-                onChange={(e) => setBatchSize(parseInt(e.target.value))}
-              />
-            </div>
-            <div className="m-2 flex justify-center">
-              <button
-                disabled={isTraining}
-                className={`rounded-2xl bg-blue-500 px-4 py-2 text-lg transition-all ease-in-out ${
-                  !isTraining &&
-                  "hover:bg-indigo-600 hover:ring-2 active:bg-indigo-500"
-                } ring-indigo-500 duration-300 ${
-                  isTraining && "animate-pulse"
-                }`}
-                onClick={() => {
-                  setIsTraining(true);
-
-                  startTraining(
-                    getConfig(
-                      "pima",
-                      canvasBlocks,
-                      loss,
-                      optimizer,
-                      learningRate,
-                      epochs,
-                      batchSize,
-                    ),
-                  ).then((data: any) => {
-                    setTrainingRes(data.RESULTS);
-                    setProgress(
-                      Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
-                    );
-                    setIsTraining(false);
-                    setIsModalOpen(true);
-                  });
-                }}
-              >
-                {isTraining ? "Training..." : "Train"}
-              </button>
-            </div>
-            {<div>Results: {JSON.stringify(trainingRes)}</div>}
-          </div>
-          <div>
-            <button
-              className="m-2 rounded-md bg-blue-500 px-4 py-2"
-              onClick={() => {
-                downloadFile(
-                  getConfig(
-                    "pima",
-                    canvasBlocks,
-                    loss,
-                    optimizer,
-                    0.001,
-                    100,
-                    10,
-                  ),
-                );
-              }}
-            >
-              Download Python Notebook
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <DragOverlay>
-        {activeBlock && (
-          <OverlayBlock
-            label={activeBlock.label}
-            color={activeBlock.color}
-            id={activeBlock.id}
-            block={canvasBlocks.find((b) => b.id === activeBlock.id)!}
-          />
-        )}
-      </DragOverlay>
-    </DndContext>
+      {mode === "DATA" ? (
+        <div>Data</div> // Data component
+      ) : (
+        <Layers
+          lossState={lossState}
+          optimizerState={optimizerState}
+          learningRateState={learningRateState}
+          epochState={epochState}
+          batchSizeState={batchSizeState}
+          isTrainingState={isTrainingState}
+          trainingResState={trainingResState}
+          progressState={progressState}
+        />
+      )}
+    </div>
   );
 };
 
