@@ -37,3 +37,13 @@ export interface Config {
   epoch: number;
   batch_size: number;
 }
+
+export enum DataMode {
+  UPLOAD = "UPLOAD",
+  PRESET = "PRESET",
+}
+
+export enum AppMode {
+  DATA = "DATA",
+  LAYERS = "LAYERS",
+}

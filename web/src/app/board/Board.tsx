@@ -2,9 +2,14 @@
 import React, { useState } from "react";
 import Toggle from "../_components/Toggle";
 import Layers from "./Layers";
+import Data from "./Data";
+import { AppMode, DataMode } from "~/types";
 
 const Board = () => {
-  const [mode, setMode] = useState<"DATA" | "LAYERS">("DATA");
+  const [mode, setMode] = useState<AppMode>(AppMode.DATA);
+
+  // global data state
+  const dataModeState = useState<DataMode>(DataMode.UPLOAD);
 
   // global layer state
   const lossState = useState("BCE");
@@ -29,7 +34,7 @@ const Board = () => {
         />
       </div>
       {mode === "DATA" ? (
-        <div>Data</div> // Data component
+        <Data dataModeState={dataModeState} />
       ) : (
         <Layers
           lossState={lossState}
