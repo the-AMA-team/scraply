@@ -1,4 +1,4 @@
-# Scraply
+# Scraply - Best Developer Tool (HackPrinceton Winner)
 **A gamified deep learning playground with a scratch-like, no-code UI 🚀**
 
 **What is Scraply?** Scraply is a web app where users can run neural networks using a scratch-like interface without using code, get suggestions to build an ideal model architecture for each level, and download the Python Notebook for their own model!
