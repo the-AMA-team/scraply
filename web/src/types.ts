@@ -6,6 +6,7 @@ export interface UILayer {
   activationFunction: ActivationFunction;
 }
 
+// convert to enum
 export type ActivationFunction =
   | ""
   | "ReLU"

@@ -1,5 +1,4 @@
 "use client";
-import { UILayer } from "../../types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import OverlayBlock from "./OverlayBlock";
@@ -26,6 +25,7 @@ const SortableBlock = ({ id, label, color }: SortableBlockProps) => {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    minWidth: "40%",
   };
 
   return (
@@ -34,7 +34,7 @@ const SortableBlock = ({ id, label, color }: SortableBlockProps) => {
       style={style}
       {...listeners}
       {...attributes}
-      className=""
+      className="overlayblock-div"
     >
       <OverlayBlock
         label={label}

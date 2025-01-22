@@ -14,42 +14,42 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
   const { changeActivationFunction, changeNeurons } = useBoardStore();
   return (
     <div
-      className={`mr-1 cursor-grab rounded-2xl px-10 py-20 text-center ring-1 ring-zinc-100`}
+      className={`cursor-grab rounded-2xl py-8 text-center ring-1 ring-zinc-100`}
       style={{ backgroundColor: color }}
     >
-      <input
-        className="h-8 w-10 rounded-md text-center text-zinc-900 outline-none"
-        type="number"
-        value={block?.neurons}
-        onChange={(e) => {
-          const newNeurons = parseInt(e.target.value);
-          if (newNeurons < 1) return;
-          changeNeurons(id, newNeurons);
-        }}
-      />
-      <div className="text-xl font-medium">{label}</div>
+      <div className="mx-4 flex justify-between">
+        <div className="text-xl font-medium">{label}</div>
+        <input
+          className="h-8 w-10 rounded-md text-center text-zinc-900 shadow-md outline-none"
+          type="number"
+          value={block?.neurons}
+          onChange={(e) => {
+            const newNeurons = parseInt(e.target.value);
+            if (newNeurons < 1) return;
+            changeNeurons(id, newNeurons);
+          }}
+        />
+      </div>
       {block?.activationFunction && (
         <div className="relative flex overflow-visible">
-          <div>
-            <select
-              className="absolute right-[-75px] top-[-20px] h-16 w-16 cursor-pointer rounded-full bg-zinc-100 text-sm text-zinc-900 outline-none"
-              value={block?.activationFunction as string}
-              onChange={(e) => {
-                const newActivationFunction = e.target.value;
-                changeActivationFunction(
-                  id,
-                  newActivationFunction as ActivationFunction,
-                );
-              }}
-            >
-              <option value="ReLU">ReLU</option>
-              <option value="Sigmoid">Sigmoid</option>
-              <option value="Tanh">Tanh</option>
-              <option value="Softmax">Softmax</option>
-              <option value="LeakyReLU">LeakyReLU</option>
-              <option value="PReLU">PReLU</option>
-            </select>
-          </div>
+          <select
+            className="absolute -bottom-12 left-1/2 -translate-x-1/2 transform cursor-pointer rounded-lg bg-zinc-100 py-2 text-center text-sm text-zinc-900 shadow-md outline-none"
+            value={block?.activationFunction as string}
+            onChange={(e) => {
+              const newActivationFunction = e.target.value;
+              changeActivationFunction(
+                id,
+                newActivationFunction as ActivationFunction,
+              );
+            }}
+          >
+            <option value="ReLU">ReLU</option>
+            <option value="Sigmoid">Sigmoid</option>
+            <option value="Tanh">Tanh</option>
+            <option value="Softmax">Softmax</option>
+            <option value="LeakyReLU">LeakyReLU</option>
+            <option value="PReLU">PReLU</option>
+          </select>
         </div>
       )}
     </div>

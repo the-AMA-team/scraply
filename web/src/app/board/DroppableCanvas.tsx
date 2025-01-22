@@ -1,7 +1,7 @@
 "use client";
 import { useDroppable } from "@dnd-kit/core";
 import {
-  horizontalListSortingStrategy,
+  verticalListSortingStrategy,
   SortableContext,
 } from "@dnd-kit/sortable";
 import SortableBlock from "./SortableBlock";
@@ -19,11 +19,11 @@ const DroppableCanvas = ({}: DroppableCanvasProps) => {
   return (
     <div
       ref={setNodeRef}
-      className="z-10 flex h-5/6 items-center whitespace-nowrap rounded-3xl border-2 border-dashed border-zinc-600 bg-zinc-900 p-8 px-28"
+      className="z-10 flex h-full flex-col items-center whitespace-nowrap rounded-3xl border border-dashed border-blue-600 bg-zinc-900 p-2"
     >
       <SortableContext
         items={canvasBlocks.map((block: UILayer) => block.id)}
-        strategy={horizontalListSortingStrategy}
+        strategy={verticalListSortingStrategy}
       >
         {canvasBlocks.map((block) => (
           <SortableBlock

@@ -13,6 +13,7 @@ import { BLOCKS } from "../../util/BLOCKS";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
+import Toggle from "../_components/Toggle";
 
 interface LayersProps {
   lossState: [string, React.Dispatch<React.SetStateAction<string>>];
@@ -48,7 +49,9 @@ const Layers = ({
   const [trainingRes, setTrainingRes] = trainingResState;
   const [progress, setProgress] = progressState;
 
-  // running configs
+  const [runningToggle, setRunningToggle] = useState<"TRAIN" | "HISTORY">(
+    "TRAIN",
+  );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -126,9 +129,15 @@ const Layers = ({
           </button>
         </div>
       </div>
-      <div className={`flex gap-20 p-20 pt-10 ${isModalOpen && "opacity-50"}`}>
+      <div className={`mx-20 mt-10 flex ${isModalOpen && "opacity-50"}`}>
+        {/* Canvas area */}
+        <div className="mr-10 flex-grow">
+          <h3>Canvas</h3>
+          <DroppableCanvas />
+        </div>
+
         {/* Toolbox area */}
-        <div className="w-36">
+        <div className="mr-4">
           <h3>Scraps</h3>
           <div className="rounded-xl bg-zinc-800 py-1">
             {BLOCKS.map((block) => (
@@ -142,93 +151,108 @@ const Layers = ({
           </div>
         </div>
 
-        {/* Canvas area */}
-        <div className="flex-grow">
-          <h3>Canvas</h3>
-          <DroppableCanvas />
-        </div>
-
+        {/* Training config */}
         <div className="">
           <h3>Run</h3>
           <div className="rounded-lg bg-zinc-800 p-1 px-2 py-1 text-sm">
-            <div className="my-1 flex">
-              Loss:{" "}
-              <select
-                className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
-                value={loss}
-                onChange={(e) => setLoss(e.target.value)}
-              >
-                <option value="BCE">BCE</option>
-                <option value="CrossEntropy">CrossEntropy</option>
-              </select>
-            </div>
-            <div className="my-1 flex">
-              Optimizer:{" "}
-              <select
-                className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
-                value={optimizer}
-                onChange={(e) => setOptimizer(e.target.value)}
-              >
-                <option value="Adam">Adam</option>
-                <option value="AdamW">AdamW</option>
-                <option value="SGD">SGD</option>
-                <option value="RMSprop">RMSprop</option>
-              </select>
-            </div>
-            <div className="my-1 flex">
-              Epochs:{" "}
-              <input
-                type="number"
-                className="mx-1 w-14 rounded bg-zinc-700 p-1 text-right outline-none"
-                value={epochs}
-                onChange={(e) => setEpochs(parseInt(e.target.value))}
+            <div className="flex justify-center">
+              <Toggle
+                color="zinc"
+                option1="TRAIN"
+                option2="HISTORY"
+                selected={runningToggle}
+                setSelected={
+                  setRunningToggle as React.Dispatch<
+                    React.SetStateAction<string>
+                  >
+                }
               />
             </div>
-            <div className="my-1 flex">
-              Batch Size:{" "}
-              <input
-                type="number"
-                className="mx-1 w-14 rounded bg-zinc-700 p-1 text-right outline-none"
-                value={batchSize}
-                onChange={(e) => setBatchSize(parseInt(e.target.value))}
-              />
-            </div>
-            <div className="m-2 flex justify-center">
-              <button
-                disabled={isTraining}
-                className={`rounded-2xl bg-blue-500 px-4 py-2 text-lg transition-all ease-in-out ${
-                  !isTraining &&
-                  "hover:bg-indigo-600 hover:ring-2 active:bg-indigo-500"
-                } ring-indigo-500 duration-300 ${
-                  isTraining && "animate-pulse"
-                }`}
-                onClick={() => {
-                  setIsTraining(true);
 
-                  startTraining(
-                    getConfig(
-                      "pima",
-                      canvasBlocks,
-                      loss,
-                      optimizer,
-                      learningRate,
-                      epochs,
-                      batchSize,
-                    ),
-                  ).then((data: any) => {
-                    setTrainingRes(data.RESULTS);
-                    setProgress(
-                      Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
-                    );
-                    setIsTraining(false);
-                    setIsModalOpen(true);
-                  });
-                }}
-              >
-                {isTraining ? "Training..." : "Train"}
-              </button>
-            </div>
-            {<div>Results: {JSON.stringify(trainingRes)}</div>}
+            {runningToggle === "TRAIN" ? (
+              <div>
+                <div className="my-1 flex">
+                  Loss:{" "}
+                  <select
+                    className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
+                    value={loss}
+                    onChange={(e) => setLoss(e.target.value)}
+                  >
+                    <option value="BCE">BCE</option>
+                    <option value="CrossEntropy">CrossEntropy</option>
+                  </select>
+                </div>
+                <div className="my-1 flex">
+                  Optimizer:{" "}
+                  <select
+                    className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
+                    value={optimizer}
+                    onChange={(e) => setOptimizer(e.target.value)}
+                  >
+                    <option value="Adam">Adam</option>
+                    <option value="AdamW">AdamW</option>
+                    <option value="SGD">SGD</option>
+                    <option value="RMSprop">RMSprop</option>
+                  </select>
+                </div>
+                <div className="my-1 flex">
+                  Epochs:{" "}
+                  <input
+                    type="number"
+                    className="mx-1 w-14 rounded bg-zinc-700 p-1 text-right outline-none"
+                    value={epochs}
+                    onChange={(e) => setEpochs(parseInt(e.target.value))}
+                  />
+                </div>
+                <div className="my-1 flex">
+                  Batch Size:{" "}
+                  <input
+                    type="number"
+                    className="mx-1 w-14 rounded bg-zinc-700 p-1 text-right outline-none"
+                    value={batchSize}
+                    onChange={(e) => setBatchSize(parseInt(e.target.value))}
+                  />
+                </div>
+                <div className="m-2 flex justify-center">
+                  <button
+                    disabled={isTraining}
+                    className={`rounded-2xl bg-blue-500 px-4 py-2 text-lg transition-all ease-in-out ${
+                      !isTraining &&
+                      "hover:bg-indigo-600 hover:ring-2 active:bg-indigo-500"
+                    } ring-indigo-500 duration-300 ${
+                      isTraining && "animate-pulse"
+                    }`}
+                    onClick={() => {
+                      setIsTraining(true);
+
+                      startTraining(
+                        getConfig(
+                          "pima",
+                          canvasBlocks,
+                          loss,
+                          optimizer,
+                          learningRate,
+                          epochs,
+                          batchSize,
+                        ),
+                      ).then((data: any) => {
+                        setTrainingRes(data.RESULTS);
+                        setProgress(
+                          Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
+                        );
+                        setIsTraining(false);
+                        setIsModalOpen(true);
+                      });
+                    }}
+                  >
+                    {isTraining ? "Training..." : "Train"}
+                  </button>
+                </div>
+                {<div>Results: {JSON.stringify(trainingRes)}</div>}
+              </div>
+            ) : (
+              <div>History</div>
+            )}
           </div>
           <div>
             <button
@@ -255,12 +279,20 @@ const Layers = ({
 
       <DragOverlay>
         {activeBlock && (
-          <OverlayBlock
-            label={activeBlock.label}
-            color={activeBlock.color}
-            id={activeBlock.id}
-            block={canvasBlocks.find((b) => b.id === activeBlock.id)!}
-          />
+          <div
+            style={{
+              width: document
+                .getElementsByClassName("overlayblock-div")[0]
+                ?.getBoundingClientRect().width,
+            }}
+          >
+            <OverlayBlock
+              label={activeBlock.label}
+              color={activeBlock.color}
+              id={activeBlock.id}
+              block={canvasBlocks.find((b) => b.id === activeBlock.id)!}
+            />
+          </div>
         )}
       </DragOverlay>
     </DndContext>
