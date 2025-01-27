@@ -1,16 +1,17 @@
-import type { Config } from "tailwindcss";
+import { type Config } from "tailwindcss";
+import { fontFamily } from "tailwindcss/defaultTheme";
+
+const colorSafelist = ["blue", "zinc"];
 
 export default {
-  content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  safelist: colorSafelist
+    .map((color) => [`bg-${color}-600`, `ring-${color}-600`])
+    .flat(),
+  content: ["./src/**/*.tsx"],
   theme: {
     extend: {
-      colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+      fontFamily: {
+        sans: ["var(--font-geist-sans)", ...fontFamily.sans],
       },
     },
   },

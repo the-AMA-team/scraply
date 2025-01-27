@@ -1,13 +1,17 @@
 "use client";
 import { useDroppable } from "@dnd-kit/core";
 import {
-  horizontalListSortingStrategy,
+  verticalListSortingStrategy,
   SortableContext,
 } from "@dnd-kit/sortable";
 import SortableBlock from "./SortableBlock";
-import { Block } from "@/types";
+import { UILayer } from "../../types";
+import { useBoardStore } from "~/state/boardStore";
 
-const DroppableCanvas = ({ blocks }: { blocks: Block[] }) => {
+interface DroppableCanvasProps {}
+
+const DroppableCanvas = ({}: DroppableCanvasProps) => {
+  const { canvasBlocks } = useBoardStore();
   const { setNodeRef } = useDroppable({
     id: "canvas",
   });
@@ -15,20 +19,18 @@ const DroppableCanvas = ({ blocks }: { blocks: Block[] }) => {
   return (
     <div
       ref={setNodeRef}
-      className="flex h-5/6 border-2 rounded-3xl border-dashed border-zinc-600 p-8 px-28 bg-zinc-900 whitespace-nowrap z-10 items-center"
+      className="z-10 flex h-full flex-col items-center whitespace-nowrap rounded-3xl border border-dashed border-blue-600 bg-zinc-900 p-2"
     >
       <SortableContext
-        items={blocks.map((block: Block) => block.id)}
-        strategy={horizontalListSortingStrategy}
+        items={canvasBlocks.map((block: UILayer) => block.id)}
+        strategy={verticalListSortingStrategy}
       >
-        {blocks.map((block) => (
+        {canvasBlocks.map((block) => (
           <SortableBlock
             key={block.id}
             id={block.id}
             label={block.label}
             color={block.color}
-            activationFunction={block.activationFunction}
-            neurons={block.neurons}
           />
         ))}
       </SortableContext>

@@ -1,10 +1,17 @@
 "use client";
-import { Block } from "@/types";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import OnBoardBlock from "./OnBoardBlock";
+import OverlayBlock from "./OverlayBlock";
+import { useBoardStore } from "~/state/boardStore";
 
-const SortableBlock = ({ id, label, color }: Block) => {
+interface SortableBlockProps {
+  id: string;
+  label: string;
+  color: string;
+}
+
+const SortableBlock = ({ id, label, color }: SortableBlockProps) => {
+  const { canvasBlocks } = useBoardStore();
   const {
     attributes,
     listeners,
@@ -18,6 +25,7 @@ const SortableBlock = ({ id, label, color }: Block) => {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    minWidth: "40%",
   };
 
   return (
@@ -26,9 +34,14 @@ const SortableBlock = ({ id, label, color }: Block) => {
       style={style}
       {...listeners}
       {...attributes}
-      className=""
+      className="overlayblock-div"
     >
-      <OnBoardBlock label={label} color={color} id={id} />
+      <OverlayBlock
+        label={label}
+        color={color}
+        id={id}
+        block={canvasBlocks.find((block) => block.id === id)!}
+      />
     </div>
   );
 };

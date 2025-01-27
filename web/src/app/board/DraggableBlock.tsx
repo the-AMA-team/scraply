@@ -1,13 +1,22 @@
 "use client";
-import { Block } from "@/types";
 import { useDraggable } from "@dnd-kit/core";
 
-const DraggableBlock = ({ id, label, color, activationFunction: _ }: Block) => {
-  const { active, attributes, listeners, setNodeRef, transform } = useDraggable(
-    {
-      id,
-    }
-  );
+interface DraggableBlockProps {
+  id: string;
+  label: string;
+  color: string;
+}
+
+const DraggableBlock = ({ id, label, color }: DraggableBlockProps) => {
+  const {
+    active,
+    attributes: _,
+    listeners,
+    setNodeRef,
+    transform,
+  } = useDraggable({
+    id,
+  });
 
   return (
     <div
@@ -19,8 +28,8 @@ const DraggableBlock = ({ id, label, color, activationFunction: _ }: Block) => {
         backgroundColor: color,
       }}
       {...listeners}
-      {...attributes}
-      className={`p-7 m-4 rounded-2xl text-center cursor-grab ${
+      // {...attributes}
+      className={`m-4 cursor-grab rounded-2xl p-7 text-center ${
         active?.id == id && "opacity-0"
       }`}
     >
