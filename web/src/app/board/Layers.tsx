@@ -153,7 +153,7 @@ const Layers = ({
 
         {/* Training config */}
         <div className="">
-          <h3>Run</h3>
+          <h3>Train</h3>
           <div className="rounded-lg bg-zinc-800 p-1 px-2 py-1 text-sm">
             <div className="flex justify-center">
               <Toggle
@@ -198,6 +198,14 @@ const Layers = ({
                 <div className="my-1 flex">
                   Epochs:{" "}
                   <input
+                    type="range"
+                    name="Batch Size"
+                    value={epochs}
+                    onChange={(e) => setEpochs(parseInt(e.target.value))}
+                    min={1}
+                    max={1000}
+                  />
+                  <input
                     type="number"
                     className="mx-1 w-14 rounded bg-zinc-700 p-1 text-right outline-none"
                     value={epochs}
@@ -206,6 +214,14 @@ const Layers = ({
                 </div>
                 <div className="my-1 flex">
                   Batch Size:{" "}
+                  <input
+                    type="range"
+                    name="Batch Size"
+                    value={batchSize}
+                    onChange={(e) => setBatchSize(parseInt(e.target.value))}
+                    min={1}
+                    max={100}
+                  />
                   <input
                     type="number"
                     className="mx-1 w-14 rounded bg-zinc-700 p-1 text-right outline-none"

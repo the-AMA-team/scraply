@@ -14,7 +14,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
   const { changeActivationFunction, changeNeurons } = useBoardStore();
   return (
     <div
-      className={`cursor-grab rounded-2xl py-8 text-center ring-1 ring-zinc-100`}
+      className={`cursor-grab rounded-2xl py-4 text-center ring-1 ring-zinc-100`}
       style={{ backgroundColor: color }}
     >
       <div className="mx-4 flex justify-between">
@@ -33,7 +33,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
       {block?.activationFunction && (
         <div className="relative flex overflow-visible">
           <select
-            className="absolute -bottom-12 left-1/2 -translate-x-1/2 transform cursor-pointer rounded-lg bg-zinc-100 py-2 text-center text-sm text-zinc-900 shadow-md outline-none"
+            className="absolute -bottom-8 left-1/2 -translate-x-1/2 transform cursor-pointer rounded-lg bg-zinc-100 py-2 text-center text-sm text-zinc-900 shadow-md outline-none"
             value={block?.activationFunction as string}
             onChange={(e) => {
               const newActivationFunction = e.target.value;
