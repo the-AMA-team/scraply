@@ -26,6 +26,7 @@ export const layers = {
     "LSTM": tf.layers.lstm,
     "GRU": tf.layers.gru,
     "RNN": tf.layers.rnn,
+    "Dropout": tf.layers.dropout,
 }
 // implementation example 
 // layers["Dense"]({units: 32, inputShape: [50]})
