@@ -12,9 +12,10 @@
 **Development (Scrap-by-Scrap):** We use preloaded datasets and GPU acceleration with CUDA to allow our models to train quickly. With neural network models deployed through Flask, one of our concerns was managing our computations on the cloud. We used a Terraform configuration to monitor this for us, specified to run on AWS EC2 instances.
 
 **Updates Coming Soon:**
+- 👾 ability to run in browser
 - 👾 more scrap options
 - 👾 vertical scrapyard
-- 👾 explainability options
+- 👾 explainability features
 
 ### Team
 
