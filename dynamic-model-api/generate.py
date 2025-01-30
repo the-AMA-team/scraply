@@ -119,6 +119,7 @@ LAYERS = {{
     "LSTM": lambda i, h_size: nn.LSTM(i, h_size),
     "GRU": lambda i, h_size: nn.GRU(i, h_size),
     "RNN": lambda i, h_size: nn.RNN(i, h_size),
+    "Dropout": lambda p: nn.Dropout(p),
 }}
 
 
@@ -212,7 +213,7 @@ def test(self, n_epochs, batch_size):
     # else:
     size = len(self.test_loader.dataset)
     num_batches = len(self.test_loader)
-    self.model.eval()
+    self.model.eval() # model mode change is especially important for dropout layer 
     test_loss, correct = 0, 0
 
     with torch.no_grad():

@@ -11,6 +11,7 @@ params = {
         {"kind": "ReLU"},
         {"kind": "Linear", "args": (12, 8)},
         {"kind": "ReLU"},
+        {"kind": "Dropout", "args": 0.2}, # for testing!!!
         {"kind": "Linear", "args": (8, 1)},
         {"kind": "Sigmoid"},
     ],

@@ -26,6 +26,11 @@ def are_params_valid(data):
             if not isinstance(l["args"], list) or len(l["args"]) != 3:
                 print("invalid conv")
                 return False
+            
+        elif l["kind"] in ["Dropout"]:
+            if not isinstance(l["args"], list) or len(l["args"]) != 1:
+                print("invalid dropout")
+                return False
 
         elif l["kind"] in ["LSTM", "GRU", "RNN"]:
             if not isinstance(l["args"], list) or len(l["args"]) != 2:
@@ -126,6 +131,8 @@ LAYERS = {
     "LSTM": lambda i, h_size: nn.LSTM(i, h_size),
     "GRU": lambda i, h_size: nn.GRU(i, h_size),
     "RNN": lambda i, h_size: nn.RNN(i, h_size),
+    "Dropout": lambda p: nn.Dropout(p),
+    # need to add functionality for dropout layer
 }
 
 

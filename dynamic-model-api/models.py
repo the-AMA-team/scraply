@@ -37,6 +37,9 @@ class DynamicModel(nn.Module):
                 elif layer_type in ["LSTM", "GRU", "RNN"]:
                     i, h_size = layer_args
                     component = LAYERS[layer_type](i, h_size)
+                    
+                elif layer_type == "Dropout":
+                    component = LAYERS[layer_type](p=layer_args) # 1 arg 
 
                 elif layer_type == "Flatten":
                     component = LAYERS[layer_type]  # no args needed
@@ -168,7 +171,7 @@ class Train:
     def test(self, n_epochs, batch_size):
         size = len(self.test_loader.dataset)
         num_batches = len(self.test_loader)
-        self.model.eval()
+        self.model.eval() # model mode change is especially important for dropout layers
         test_loss, correct = 0, 0
 
         with torch.no_grad():
