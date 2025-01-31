@@ -6,6 +6,8 @@ import * as tf from "@tensorflow/tfjs";
 // will need to update this with new dataloaders
 // }
 
+// use tf.data.csv(source, csvConfig); for PIMA dataset --> using CSV for now
+
 export const activations = {
   ReLU: tf.relu,
   Sigmoid: tf.sigmoid,
