@@ -129,7 +129,7 @@ const Layers = ({
           </button>
         </div>
       </div>
-      <div className={`mx-20 mt-10 flex ${isModalOpen && "opacity-50"}`}>
+      <div className={`mx-20 mt-10 flex h-full ${isModalOpen && "opacity-50"}`}>
         {/* Canvas area */}
         <div className="mr-10 flex-grow">
           <h3>Canvas</h3>
