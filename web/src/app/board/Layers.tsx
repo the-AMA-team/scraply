@@ -14,6 +14,7 @@ import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
 import Toggle from "../_components/Toggle";
+import { createTfModel } from "~/dynamic-model-js/model.util";
 
 interface LayersProps {
   lossState: [string, React.Dispatch<React.SetStateAction<string>>];
@@ -238,27 +239,33 @@ const Layers = ({
                     } ring-indigo-500 duration-300 ${
                       isTraining && "animate-pulse"
                     }`}
-                    onClick={() => {
-                      setIsTraining(true);
+                    // onClick={() => {
+                    //   setIsTraining(true);
 
-                      startTraining(
-                        getConfig(
-                          "pima",
-                          canvasBlocks,
-                          loss,
-                          optimizer,
-                          learningRate,
-                          epochs,
-                          batchSize,
-                        ),
-                      ).then((data: any) => {
-                        setTrainingRes(data.RESULTS);
-                        setProgress(
-                          Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
-                        );
-                        setIsTraining(false);
-                        setIsModalOpen(true);
-                      });
+                    //   startTraining(
+                    //     getConfig(
+                    //       "pima",
+                    //       canvasBlocks,
+                    //       loss,
+                    //       optimizer,
+                    //       learningRate,
+                    //       epochs,
+                    //       batchSize,
+                    //     ),
+                    //   ).then((data: any) => {
+                    //     setTrainingRes(data.RESULTS);
+                    //     setProgress(
+                    //       Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
+                    //     );
+                    //     setIsTraining(false);
+                    //     setIsModalOpen(true);
+                    //   });
+                    // }}
+                    onClick={() => {
+                      console.log(canvasBlocks.map((b) => b.tfFunction));
+                      console.log(
+                        createTfModel(canvasBlocks.map((b) => b.tfFunction())),
+                      );
                     }}
                   >
                     {isTraining ? "Training..." : "Train"}

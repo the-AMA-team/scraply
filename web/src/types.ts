@@ -1,16 +1,18 @@
-export interface UILayer {
+import * as tf from "@tensorflow/tfjs";
+
+export interface UILayer<L, A = tf.layers.Layer> {
   id: string;
   label: string;
   color: string;
   neurons: number;
-  activationFunction: ActivationFunction;
+  activationFunction: A;
+  tfFunction: L;
 }
 
 // convert to enum
 export type ActivationFunction =
   | ""
   | "ReLU"
-  | "Sigmoid"
   | "Tanh"
   | "Softmax"
   | "LeakyReLU"
