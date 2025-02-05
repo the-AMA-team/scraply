@@ -1,3 +1,4 @@
+import * as tf from "@tensorflow/tfjs";
 import {
   DragEndEvent,
   DragOverEvent,
@@ -9,21 +10,21 @@ import { createStoreWithProducer } from "@xstate/store";
 import { useSelector } from "@xstate/store/react";
 import { produce } from "immer";
 import { BLOCKS } from "~/util/BLOCKS";
-import { ActivationFunction, UILayer } from "~/types";
+import { AnyUILayer } from "~/types";
 
 const boardStore = createStoreWithProducer(produce, {
   context: { canvasBlocks: [], activeBlock: null } as {
-    canvasBlocks: UILayer[];
-    activeBlock: UILayer | null;
+    canvasBlocks: AnyUILayer[];
+    activeBlock: AnyUILayer | null;
   },
   on: {
     dragStart: (context, event: DragStartEvent) => {
       const { id } = event.active;
       const block =
-        (BLOCKS.find((item) => item.id === id) as UILayer) ||
+        (BLOCKS.find((item) => item.id === id) as AnyUILayer) ||
         (context.canvasBlocks.find(
           (item: { id: UniqueIdentifier }) => item.id === id,
-        ) as UILayer);
+        ) as AnyUILayer);
       context.activeBlock = block;
     },
 
@@ -68,11 +69,13 @@ const boardStore = createStoreWithProducer(produce, {
 
     changeActivationFunction: (
       context,
-      event: { id: string; activationFunction: ActivationFunction },
+      event: { id: string; activationFunction: tf.layers.Layer },
     ) => {
       const { id, activationFunction } = event;
       context.canvasBlocks = context.canvasBlocks.map((block) =>
-        block.id === id ? { ...block, activationFunction } : block,
+        block.id === id
+          ? ({ ...block, activationFunction } as AnyUILayer)
+          : block,
       );
     },
 
@@ -85,7 +88,20 @@ const boardStore = createStoreWithProducer(produce, {
   },
 });
 
-export const useBoardStore = () => {
+export const useBoardStore = (): {
+  canvasBlocks: AnyUILayer[];
+  activeBlock: AnyUILayer | null;
+  changeActivationFunction: (
+    id: string,
+    activationFunction: tf.layers.Layer,
+  ) => void;
+  changeNeurons: (id: string, neurons: number) => void;
+  drag: {
+    start: (event: DragStartEvent) => void;
+    over: (event: DragOverEvent) => void;
+    end: (event: DragEndEvent) => void;
+  };
+} => {
   return {
     canvasBlocks: useSelector(
       boardStore,
@@ -94,7 +110,7 @@ export const useBoardStore = () => {
     activeBlock: useSelector(boardStore, (state) => state.context.activeBlock),
     changeActivationFunction: (
       id: string,
-      activationFunction: ActivationFunction,
+      activationFunction: tf.layers.Layer,
     ) => {
       boardStore.send({
         type: "changeActivationFunction",

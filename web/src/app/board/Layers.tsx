@@ -262,9 +262,13 @@ const Layers = ({
                     //   });
                     // }}
                     onClick={() => {
-                      console.log(canvasBlocks.map((b) => b.tfFunction));
                       console.log(
-                        createTfModel(canvasBlocks.map((b) => b.tfFunction())),
+                        createTfModel(
+                          canvasBlocks.map((b) => {
+                            const args = b.tfFunctionArgs;
+                            return b.tfFunction(12, [12]);
+                          }),
+                        ),
                       );
                     }}
                   >
