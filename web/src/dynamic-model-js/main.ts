@@ -16,12 +16,15 @@ model.add(layers["Linear"]({ units: 1, inputShape: [1] }));
 model.compile({ loss: losses["MSE"], optimizer: optimizers["Adam"], metrics: ['accuracy']}); // NEED TO USE METRICS ARG TO STORE ACCURACY
 
 // training stuff
-const h = await model.fit(xs, ys, { epochs: 10, batchSize: 1 });  
-// need await because javascript needs to wait for it to finish before moving on 😛
+const h = await model.fit(xs, ys, { epochs: 10, batchSize: 1 });  // need await because javascript needs to wait for it to finish before moving on 😛
 // could use early stopping as a feature for the user??
 // TRAINING LOG!!
-console.log(h.history.loss); // 10 loss values
-console.log(h.history.acc); // 10 acc values
+
+const train_loss = h.history.loss;
+const train_acc = h.history.acc;
+console.log(train_loss); // 10 loss values
+console.log(train_acc); // 10 acc values
+
 
 // testing stuff
 const result = model.evaluate(tf.tensor2d([1, 2, 3, 4], [4, 1]), tf.tensor2d([1, 3, 5, 7], [4, 1]), {batchSize: 4});
