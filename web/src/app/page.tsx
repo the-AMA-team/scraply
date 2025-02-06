@@ -1,6 +1,6 @@
 "use client";
 import Board from "./board/Board";
-// import "../dynamic-model-js/main" // just for testing; will run on the server
+import "../dynamic-model-js/main"; // just for testing; will run on the server
 
 export default function HomePage() {
   return (
