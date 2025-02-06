@@ -1,5 +1,4 @@
 // TRAINING FUNCTIONS FOR NON-DICTIONARY PLAN
-
 import * as tf from "@tensorflow/tfjs";
 import { activations, layers, losses, optimizers } from "./main-params";
 
@@ -26,19 +25,19 @@ console.log(h.history.acc); // 10 acc values
 
 // testing stuff
 const result = model.evaluate(tf.tensor2d([1, 2, 3, 4], [4, 1]), tf.tensor2d([1, 3, 5, 7], [4, 1]), {batchSize: 4});
+//const result1 = model.evaluate(tf.tensor2d([1, 2, 3, 4], [4, 1]), tf.tensor2d([1, 3, 5, 7], [4, 1]));
+
+// // Print the loss (method 1 of retrival)
 // const loss = (result[0] as tf.Scalar).dataSync()[0];
 // const accuracy = (result[1] as tf.Scalar).dataSync()[0];
+// console.log(`individual Loss: ${loss}`); // first one is loss, second one is accuracy
+// console.log(`individual Accuracy: ${accuracy}`); // first one is loss, second one is accuracy
 
-// Print the loss
-//console.log(`Loss: ${result[0].dataSync()}`); 
-console.log(`Loss: ${result[0].dataSync()}`); // first one is loss, second one is accuracy
-console.log(`Accuracy: ${result[1].dataSync()}`); // first one is loss, second one is accuracy
-
-result.forEach(result => {
-    console.log(`${result.name}: ${result.dataSync()}`); // first one is loss, second one is accuracy
-  });
-//console.log(result[0]);
-//console.log(result.history.loss); //  loss values --> womp womp this function doesnt exist
+// Print the loss (method 2 of retrival)
+const loss = (result instanceof Array ? result[0] : result)?.dataSync();
+const accuracy = (result instanceof Array ? result[1] : result)?.dataSync();
+console.log(`slay Loss: ${loss}`); // first one is loss, second one is accuracy
+console.log(`slay Accuracy: ${accuracy}`); // first one is loss, second one is accuracy
 
 
 // prediction/inference stuff
