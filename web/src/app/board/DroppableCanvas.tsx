@@ -5,7 +5,7 @@ import {
   SortableContext,
 } from "@dnd-kit/sortable";
 import SortableBlock from "./SortableBlock";
-import { UILayer } from "../../types";
+import { AnyUILayer } from "../../types";
 import { useBoardStore } from "~/state/boardStore";
 
 interface DroppableCanvasProps {}
@@ -22,7 +22,7 @@ const DroppableCanvas = ({}: DroppableCanvasProps) => {
       className="z-10 flex h-full flex-col items-center whitespace-nowrap rounded-3xl border border-dashed border-blue-600 bg-zinc-900 p-2"
     >
       <SortableContext
-        items={canvasBlocks.map((block: UILayer) => block.id)}
+        items={canvasBlocks.map((block: AnyUILayer) => block.id)}
         strategy={verticalListSortingStrategy}
       >
         {canvasBlocks.map((block) => (

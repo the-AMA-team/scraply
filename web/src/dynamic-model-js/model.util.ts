@@ -2,11 +2,10 @@ import * as tf from "@tensorflow/tfjs";
 
 export const createTfModel = (layers: tf.layers.Layer[]) => {
   const model = tf.sequential();
-  console.log("utils", layers);
-  layers.forEach((layer) => {
+  layers.forEach((layer, idx) => {
+    console.log(idx, layer);
     model.add(layer);
   });
-  console.log(model);
   return model;
 };
 
