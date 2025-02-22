@@ -27,9 +27,9 @@ estimator = PyTorch(
 )
 
 # Start the training job
-try:
-    print("Starting training job...")
-    estimator.fit({'train': input_data_path})
-    print("Training job submitted.")
-except Exception as e:
-    print(f"Error: {e}")
+# try:
+    # print("Starting training job...")
+estimator.fit({'train': input_data_path})
+    # print("Training job submitted.")
+# except Exception as e:
+    # print(f"Error: {e}")
