@@ -24,12 +24,11 @@ const Decoder: React.FC<DecoderProps> = ({
 }) => {
   return (
     <div className="my-4">
-      {title}
-      <div className="rounded-2xl p-2 ring ring-zinc-800">
-        <div className="my-1 flex flex-col items-center rounded-xl bg-gray-900 p-1">
-          <div>Layer Norm</div>
-        </div>
-        <div className="my-1 flex flex-col items-center rounded-2xl bg-gray-800 p-1">
+      <div className="rounded-xl bg-zinc-900 p-2 text-center text-2xl text-zinc-700">
+        {title}
+      </div>
+      <div className="rounded-3xl p-2 ring ring-zinc-800">
+        <div className="my-1 flex flex-col items-center rounded-2xl bg-zinc-800 p-3">
           <div>Feed Forward</div>
           <div className="flex items-center">
             <div>Linear layers: </div>
@@ -41,10 +40,10 @@ const Decoder: React.FC<DecoderProps> = ({
             />
           </div>
         </div>
-        <div className="my-1 flex flex-col items-center rounded-xl bg-gray-900 p-1">
+        <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1">
           <div>Layer Norm</div>
         </div>
-        <div className="my-1 flex flex-col items-center rounded-2xl bg-gray-800 p-1">
+        <div className="my-1 flex flex-col items-center rounded-2xl bg-zinc-800 p-3">
           <div>Self Attention</div>
           <div className="flex items-center">
             <div>Embedding Dim: </div>
@@ -62,6 +61,9 @@ const Decoder: React.FC<DecoderProps> = ({
               onChange={(e) => setSaAttentionHeads(parseInt(e.target.value))}
             />
           </div>
+        </div>
+        <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1">
+          <div>Layer Norm</div>
         </div>
       </div>
     </div>
@@ -121,7 +123,7 @@ const TransformersBoard = () => {
       <div className="flex w-full justify-center">
         <button
           onClick={handleAppendDecoder}
-          className="duration-50 m-2 w-1/2 rounded-2xl border-2 border-dashed border-zinc-700 p-2 text-3xl text-zinc-700 transition-colors hover:border-zinc-500 hover:text-zinc-500"
+          className="m-2 w-1/2 rounded-2xl border-2 border-dashed border-zinc-800 p-2 text-3xl text-zinc-800 transition-colors duration-75 hover:border-zinc-700 hover:text-zinc-700"
         >
           +
         </button>
