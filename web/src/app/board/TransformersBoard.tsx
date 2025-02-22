@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Decoder {
   title: string;
@@ -23,7 +24,13 @@ const Decoder: React.FC<DecoderProps> = ({
   setSaAttentionHeads,
 }) => {
   return (
-    <div className="my-4 w-2/3">
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+      className="my-4 w-2/3"
+    >
       <div className="rounded-xl bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
         {title}
       </div>
@@ -66,7 +73,7 @@ const Decoder: React.FC<DecoderProps> = ({
           <div>Layer Norm</div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -260,75 +267,84 @@ const TransformersBoard = () => {
       },
     ]);
   };
+
   return (
     <div className="flex">
       <div className="w-2/3">
         <div className="flex flex-col items-center">
-          {decoders.map((encoder, i) => (
-            <Decoder
-              key={i}
-              title={encoder.title}
-              setFfLinearLayers={(value) =>
-                setDecoders((prev) => {
-                  const newDecoder = [...prev];
-                  newDecoder[i].ffLinearLayers = value;
-                  return newDecoder;
-                })
-              }
-              setsaHiddenDim={(value) =>
-                setDecoders((prev) => {
-                  const newDecoder = [...prev];
-                  newDecoder[i].saHiddenDim = value;
-                  return newDecoder;
-                })
-              }
-              setSaAttentionHeads={(value) =>
-                setDecoders((prev) => {
-                  const newDecoder = [...prev];
-                  newDecoder[i].saAttentionHeads = value;
-                  return newDecoder;
-                })
-              }
-              ffLinearLayers={encoder.ffLinearLayers}
-              saHiddenDim={encoder.saHiddenDim}
-              saAttentionHeads={encoder.saAttentionHeads}
-            />
-          ))}
-        </div>
-        <div className="flex justify-center">
-          <button
-            onClick={handleAppendDecoder}
-            className="m-2 w-2/3 rounded-2xl border-2 border-dashed border-zinc-800 p-2 text-3xl text-zinc-800 transition-colors duration-75 hover:border-zinc-700 hover:text-zinc-700"
-          >
-            +
-          </button>
-        </div>
-        {decoders.length > 0 && (
-          <div className="flex justify-center">
-            <div className="my-4 w-2/3">
-              <div className="rounded-xl bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
-                Output
-              </div>
-              <div className="rounded-3xl p-2 ring ring-zinc-800">
-                <div className="my-1 flex flex-col items-center rounded-2xl bg-zinc-800 p-3">
-                  <div>Dropout</div>
-                  <div className="flex items-center">
-                    <input
-                      step={0.01}
-                      type="number"
-                      className="mx-2 w-14 rounded-md text-center text-zinc-900 outline-none"
-                      value={dropout}
-                      onChange={(e) => setDropout(parseFloat(e.target.value))}
-                    />
-                  </div>
+          <AnimatePresence>
+            {decoders.map((encoder, i) => (
+              <Decoder
+                key={i}
+                title={encoder.title}
+                setFfLinearLayers={(value) =>
+                  setDecoders((prev) => {
+                    const newDecoder = [...prev];
+                    if (newDecoder[i]) {
+                      newDecoder[i].ffLinearLayers = value;
+                    }
+                    return newDecoder;
+                  })
+                }
+                setsaHiddenDim={(value) =>
+                  setDecoders((prev) => {
+                    const newDecoder = [...prev];
+                    if (newDecoder[i]) {
+                      newDecoder[i].saHiddenDim = value;
+                    }
+                    return newDecoder;
+                  })
+                }
+                setSaAttentionHeads={(value) =>
+                  setDecoders((prev) => {
+                    const newDecoder = [...prev];
+                    if (newDecoder[i]) {
+                      newDecoder[i].saAttentionHeads = value;
+                    }
+                    return newDecoder;
+                  })
+                }
+                ffLinearLayers={encoder.ffLinearLayers}
+                saHiddenDim={encoder.saHiddenDim}
+                saAttentionHeads={encoder.saAttentionHeads}
+              />
+            ))}
+          </AnimatePresence>
+          <div className="flex w-full justify-center">
+            <button
+              onClick={handleAppendDecoder}
+              className="m-2 w-2/3 rounded-2xl border-2 border-dashed border-zinc-800 p-2 text-3xl text-zinc-800 transition-colors duration-75 hover:border-zinc-700 hover:text-zinc-700"
+            >
+              +
+            </button>
+          </div>
+          {decoders.length > 0 && (
+            <div className="flex w-full justify-center">
+              <div className="my-4 w-2/3">
+                <div className="rounded-xl bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
+                  Output
                 </div>
-                <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
-                  <div>Linear</div>
+                <div className="rounded-3xl p-2 ring ring-zinc-800">
+                  <div className="my-1 flex flex-col items-center rounded-2xl bg-zinc-800 p-3">
+                    <div>Dropout</div>
+                    <div className="flex items-center">
+                      <input
+                        step={0.01}
+                        type="number"
+                        className="mx-2 w-14 rounded-md text-center text-zinc-900 outline-none"
+                        value={dropout}
+                        onChange={(e) => setDropout(parseFloat(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
+                    <div>Linear</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <div className="w-1/3">
         <TrainConfig />
