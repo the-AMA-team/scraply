@@ -229,14 +229,16 @@ const LayersBoard = ({
                   onChange={(e) => setBatchSize(parseInt(e.target.value))}
                 />
               </div>
-              <div className="m-2 flex justify-center">
+              <div
+                className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-all duration-300`}
+              >
                 <button
                   disabled={isTraining}
-                  className={`rounded-2xl bg-blue-500 px-6 py-2 text-lg transition-all ease-in-out ${
+                  className={`rounded-2xl bg-zinc-700 px-6 py-2 text-lg transition-all ease-in-out ${
                     !isTraining &&
                     "hover:bg-indigo-600 hover:px-8 hover:ring-2 active:bg-indigo-500 active:px-9"
                   } ring-indigo-500 duration-300 ${
-                    isTraining && "animate-pulse px-9"
+                    isTraining && "animate-bounce px-9 ring-2 ring-zinc-600"
                   }`}
                   onClick={() => {
                     setIsTraining(true);
@@ -261,7 +263,14 @@ const LayersBoard = ({
                     });
                   }}
                 >
-                  {isTraining ? "Training..." : "Train"}
+                  {isTraining ? (
+                    <div className="flex items-center">
+                      <div>Training</div>{" "}
+                      <img src="dino-running.gif" className="w-14" />
+                    </div>
+                  ) : (
+                    "Train"
+                  )}
                 </button>
               </div>
             </div>
