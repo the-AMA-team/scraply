@@ -127,13 +127,15 @@ const LayersBoard = ({
       <div className={`mx-20 mt-10 flex ${isModalOpen && "opacity-50"}`}>
         {/* Canvas area */}
         <div className="mr-10 flex-grow">
-          <h3>Canvas</h3>
+          <div className="bg-zinc-900 p-2 text-2xl text-zinc-500">Canvas</div>
           <DroppableCanvas />
         </div>
 
         {/* Toolbox area */}
         <div className="mr-4">
-          <h3>Scraps</h3>
+          <div className="bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
+            Scraps
+          </div>
           <div className="rounded-xl bg-zinc-800 py-1">
             {LAYER_BLOCKS.map((block) => (
               <DraggableBlock
@@ -148,7 +150,7 @@ const LayersBoard = ({
 
         {/* Training config */}
         <div className="">
-          <h3>Train</h3>
+          <div className="bg-zinc-900 p-2 text-2xl text-zinc-500">Train</div>
           <div className="rounded-lg bg-zinc-800 p-1 px-2 py-1 text-sm">
             <div>
               <div className="my-1 flex">
@@ -228,64 +230,64 @@ const LayersBoard = ({
                 />
               </div>
               <div className="m-2 flex justify-center">
-                <div className="flex rounded-2xl bg-blue-500 px-4 py-2 text-white">
-                  <button
-                    disabled={isTraining}
-                    className={`text-lg transition-all ease-in-out ${
-                      !isTraining &&
-                      "hover:bg-indigo-600 hover:ring-2 active:bg-indigo-500"
-                    } ring-indigo-500 duration-300 ${
-                      isTraining && "animate-pulse"
-                    }`}
-                    onClick={() => {
-                      setIsTraining(true);
+                <button
+                  disabled={isTraining}
+                  className={`rounded-2xl bg-blue-500 px-6 py-2 text-lg transition-all ease-in-out ${
+                    !isTraining &&
+                    "hover:bg-indigo-600 hover:px-8 hover:ring-2 active:bg-indigo-500 active:px-9"
+                  } ring-indigo-500 duration-300 ${
+                    isTraining && "animate-pulse px-9"
+                  }`}
+                  onClick={() => {
+                    setIsTraining(true);
 
-                      startTraining(
-                        getConfig(
-                          "pima",
-                          canvasBlocks,
-                          loss,
-                          optimizer,
-                          learningRate,
-                          epochs,
-                          batchSize,
-                        ),
-                      ).then((data: any) => {
-                        setTrainingRes(data.RESULTS);
-                        setProgress(
-                          Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
-                        );
-                        setIsTraining(false);
-                        setIsModalOpen(true);
-                      });
-                    }}
-                  >
-                    {isTraining ? "Training..." : "Train"}
-                  </button>
-                  <details>
-                    <button
-                      onClick={() => {
-                        downloadFile(
-                          getConfig(
-                            "pima",
-                            canvasBlocks,
-                            loss,
-                            optimizer,
-                            0.001,
-                            100,
-                            10,
-                          ),
-                        );
-                      }}
-                    >
-                      Download Python Notebook
-                    </button>
-                  </details>
-                </div>
+                    startTraining(
+                      getConfig(
+                        "pima",
+                        canvasBlocks,
+                        loss,
+                        optimizer,
+                        learningRate,
+                        epochs,
+                        batchSize,
+                      ),
+                    ).then((data: any) => {
+                      setTrainingRes(data.RESULTS);
+                      setProgress(
+                        Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
+                      );
+                      setIsTraining(false);
+                      setIsModalOpen(true);
+                    });
+                  }}
+                >
+                  {isTraining ? "Training..." : "Train"}
+                </button>
               </div>
             </div>
           </div>
-          <div></div>
+          <div>
+            <div>
+              <button
+                className="my-2 w-full rounded-md bg-blue-500 px-4 py-2"
+                onClick={() => {
+                  downloadFile(
+                    getConfig(
+                      "pima",
+                      canvasBlocks,
+                      loss,
+                      optimizer,
+                      0.001,
+                      100,
+                      10,
+                    ),
+                  );
+                }}
+              >
+                Download Python Notebook
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

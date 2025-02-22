@@ -31,7 +31,7 @@ const OverlayBlock = ({ id, label, color, block }: OverlayBlockProps) => {
         />
       </div>
       {block?.activationFunction && (
-        <div className="relative flex overflow-visible">
+        <div className="relative flex overflow-y-visible">
           <select
             className="absolute -bottom-8 left-1/2 -translate-x-1/2 transform cursor-pointer rounded-lg bg-zinc-100 py-2 text-center text-sm text-zinc-900 shadow-md outline-none"
             value={block?.activationFunction as string}

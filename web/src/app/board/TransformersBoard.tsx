@@ -31,10 +31,10 @@ const Decoder: React.FC<DecoderProps> = ({
       transition={{ duration: 0.5 }}
       className="my-4 w-2/3"
     >
-      <div className="rounded-xl bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
+      <div className="bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
         {title}
       </div>
-      <div className="rounded-3xl p-2 ring ring-zinc-800">
+      <div className="rounded-2xl p-2 ring ring-zinc-800">
         <div className="my-1 flex flex-col items-center rounded-2xl bg-zinc-800 p-3">
           <div>Self Attention</div>
           <div className="flex items-center">
@@ -54,7 +54,7 @@ const Decoder: React.FC<DecoderProps> = ({
             />
           </div>
         </div>
-        <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
+        <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1 ring-2 ring-zinc-800">
           <div>Layer Norm</div>
         </div>
         <div className="my-1 flex flex-col items-center rounded-2xl bg-zinc-800 p-3">
@@ -69,7 +69,7 @@ const Decoder: React.FC<DecoderProps> = ({
             />
           </div>
         </div>
-        <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
+        <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1 ring-2 ring-zinc-800">
           <div>Layer Norm</div>
         </div>
       </div>
@@ -271,7 +271,10 @@ const TransformersBoard = () => {
   return (
     <div className="flex">
       <div className="w-2/3">
-        <div className="flex flex-col items-center">
+        <div className="my-4 flex flex-col items-center">
+          <div className="w-2/3 bg-zinc-900 p-2 text-2xl text-zinc-500">
+            Canvas
+          </div>
           <AnimatePresence>
             {decoders.map((encoder, i) => (
               <Decoder
