@@ -15,6 +15,9 @@ import matplotlib.pyplot as plt
 # ex: datasets.MNIST(root="data", train=True, download=true, transform=transform)
 
 DATALOADERS = {
+    "alice": { # dataset for decoder-only transformer, demonstrating text generation
+        "text": open('datasets/alice_1.txt', 'r', encoding='utf-8').read() # FILE DOESNT CLOSE! --> could cause some issues
+    },
     "pima": {
         "X": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, :-1].values,
         "y": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, -1].values,
