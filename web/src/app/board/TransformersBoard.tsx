@@ -29,7 +29,7 @@ const Decoder: React.FC<DecoderProps> = ({
         <div className="my-1 flex flex-col items-center rounded-xl bg-gray-900 p-1">
           <div>Layer Norm</div>
         </div>
-        <div className="my-1 flex flex-col items-center rounded-2xl bg-gray-900 p-1">
+        <div className="my-1 flex flex-col items-center rounded-2xl bg-gray-800 p-1">
           <div>Feed Forward</div>
           <div className="flex items-center">
             <div>Linear layers: </div>
@@ -41,10 +41,10 @@ const Decoder: React.FC<DecoderProps> = ({
             />
           </div>
         </div>
-        <div className="my-1 flex flex-col items-center rounded-xl bg-gray-800 p-1">
+        <div className="my-1 flex flex-col items-center rounded-xl bg-gray-900 p-1">
           <div>Layer Norm</div>
         </div>
-        <div className="my-1 flex flex-col items-center rounded-2xl bg-gray-900 p-1">
+        <div className="my-1 flex flex-col items-center rounded-2xl bg-gray-800 p-1">
           <div>Self Attention</div>
           <div className="flex items-center">
             <div>Embedding Dim: </div>
