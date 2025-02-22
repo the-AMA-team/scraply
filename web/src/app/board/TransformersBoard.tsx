@@ -3,46 +3,31 @@ import { useState } from "react";
 interface Decoder {
   title: string;
   ffLinearLayers: number;
-  saEmbeddingDim: number;
+  saHiddenDim: number;
   saAttentionHeads: number;
 }
 
 interface DecoderProps extends Decoder {
   setFfLinearLayers: (value: number) => void;
-  setSaEmbeddingDim: (value: number) => void;
+  setsaHiddenDim: (value: number) => void;
   setSaAttentionHeads: (value: number) => void;
 }
 
 const Decoder: React.FC<DecoderProps> = ({
   title,
   ffLinearLayers,
-  saEmbeddingDim,
+  saHiddenDim,
   saAttentionHeads,
   setFfLinearLayers,
-  setSaEmbeddingDim,
+  setsaHiddenDim,
   setSaAttentionHeads,
 }) => {
   return (
     <div className="my-4 w-2/3">
-      <div className="rounded-xl bg-zinc-900 p-2 text-center text-2xl text-zinc-700">
+      <div className="rounded-xl bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
         {title}
       </div>
       <div className="rounded-3xl p-2 ring ring-zinc-800">
-        <div className="my-1 flex flex-col items-center rounded-2xl bg-zinc-800 p-3">
-          <div>Feed Forward</div>
-          <div className="flex items-center">
-            <div>Linear layers: </div>
-            <input
-              type="number"
-              className="mx-2 w-10 rounded-md text-center text-zinc-900"
-              value={ffLinearLayers}
-              onChange={(e) => setFfLinearLayers(parseInt(e.target.value))}
-            />
-          </div>
-        </div>
-        <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
-          <div>Layer Norm</div>
-        </div>
         <div className="my-1 flex flex-col items-center rounded-2xl bg-zinc-800 p-3">
           <div>Self Attention</div>
           <div className="flex items-center">
@@ -50,8 +35,8 @@ const Decoder: React.FC<DecoderProps> = ({
             <input
               type="number"
               className="mx-2 w-10 rounded-md text-center text-zinc-900"
-              value={saEmbeddingDim}
-              onChange={(e) => setSaEmbeddingDim(parseInt(e.target.value))}
+              value={saHiddenDim}
+              onChange={(e) => setsaHiddenDim(parseInt(e.target.value))}
             />
             <div>Attention Heads: </div>
             <input
@@ -59,6 +44,21 @@ const Decoder: React.FC<DecoderProps> = ({
               className="mx-2 w-10 rounded-md text-center text-zinc-900"
               value={saAttentionHeads}
               onChange={(e) => setSaAttentionHeads(parseInt(e.target.value))}
+            />
+          </div>
+        </div>
+        <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
+          <div>Layer Norm</div>
+        </div>
+        <div className="my-1 flex flex-col items-center rounded-2xl bg-zinc-800 p-3">
+          <div>Feed Forward</div>
+          <div className="flex items-center">
+            <div>Hidden dim: </div>
+            <input
+              type="number"
+              className="mx-2 w-10 rounded-md text-center text-zinc-900"
+              value={ffLinearLayers}
+              onChange={(e) => setFfLinearLayers(parseInt(e.target.value))}
             />
           </div>
         </div>
@@ -81,9 +81,13 @@ const TrainConfig = () => {
   const [trainingRes, setTrainingRes] = useState<any | null>(null);
   const [progress, setProgress] = useState(0);
 
+  const [temperature, setTemperature] = useState(0.1);
+  const [prompt, setPrompt] = useState("");
+  const [generatedText, setGeneratedText] = useState("");
+
   return (
     <div className="my-4 w-fit">
-      <div className="bg-zinc-900 p-2 text-center text-2xl text-zinc-700">
+      <div className="bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
         Train
       </div>
       <div className="rounded-lg bg-zinc-800 p-1 px-2 py-1 text-sm">
@@ -181,19 +185,77 @@ const TrainConfig = () => {
           </div>
         </div>
       </div>
+      <div className="bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
+        Test
+      </div>
+      <div className="rounded-lg bg-zinc-800 p-1 px-2 py-1 text-sm">
+        <div>
+          <div className="my-1 flex">
+            Temperature:{" "}
+            <input
+              type="range"
+              name="Temperature"
+              value={temperature}
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+              min={0.1}
+              max={1}
+              step={0.01}
+            />
+            <input
+              type="number"
+              className="mx-1 w-14 rounded bg-zinc-700 py-1 outline-none"
+              value={temperature}
+              onChange={(e) => setTemperature(parseFloat(e.target.value))}
+            />
+          </div>
+          <div className="my-1">
+            Prompt:{" "}
+            <input
+              className="mx-1 rounded bg-zinc-700 py-1 outline-none"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+            />
+          </div>
+          <div className="my-1">
+            Generated:{" "}
+            <div className="rounded-lg bg-zinc-700 p-2 text-white">
+              {generatedText ? (
+                <div className="rounded-lg bg-zinc-700 p-2">
+                  {generatedText}
+                </div>
+              ) : (
+                <div className="rounded-lg bg-zinc-700 p-2">
+                  No text generated
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="m-2 flex justify-center">
+            <div className="flex rounded-2xl bg-blue-500 px-4 py-2 text-white">
+              <button
+                className={`text-lg ring-indigo-500 transition-all duration-300 ease-in-out hover:bg-indigo-600 hover:ring-2 active:bg-indigo-500`}
+              >
+                Predict
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
 const TransformersBoard = () => {
   const [decoders, setDecoders] = useState<Decoder[]>([]);
+  const [dropout, setDropout] = useState(0.01);
+
   const handleAppendDecoder = () => {
     setDecoders((prev) => [
       ...prev,
       {
         title: `Decoder #${prev.length + 1}`,
         ffLinearLayers: 3,
-        saEmbeddingDim: 64,
+        saHiddenDim: 64,
         saAttentionHeads: 6,
       },
     ]);
@@ -213,10 +275,10 @@ const TransformersBoard = () => {
                   return newDecoder;
                 })
               }
-              setSaEmbeddingDim={(value) =>
+              setsaHiddenDim={(value) =>
                 setDecoders((prev) => {
                   const newDecoder = [...prev];
-                  newDecoder[i].saEmbeddingDim = value;
+                  newDecoder[i].saHiddenDim = value;
                   return newDecoder;
                 })
               }
@@ -228,7 +290,7 @@ const TransformersBoard = () => {
                 })
               }
               ffLinearLayers={encoder.ffLinearLayers}
-              saEmbeddingDim={encoder.saEmbeddingDim}
+              saHiddenDim={encoder.saHiddenDim}
               saAttentionHeads={encoder.saAttentionHeads}
             />
           ))}
@@ -241,6 +303,32 @@ const TransformersBoard = () => {
             +
           </button>
         </div>
+        {decoders.length > 0 && (
+          <div className="flex justify-center">
+            <div className="my-4 w-2/3">
+              <div className="rounded-xl bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
+                Output
+              </div>
+              <div className="rounded-3xl p-2 ring ring-zinc-800">
+                <div className="my-1 flex flex-col items-center rounded-2xl bg-zinc-800 p-3">
+                  <div>Dropout</div>
+                  <div className="flex items-center">
+                    <input
+                      step={0.01}
+                      type="number"
+                      className="mx-2 w-14 rounded-md text-center text-zinc-900 outline-none"
+                      value={dropout}
+                      onChange={(e) => setDropout(parseFloat(e.target.value))}
+                    />
+                  </div>
+                </div>
+                <div className="my-1 flex flex-col items-center rounded-xl bg-zinc-900 p-1 ring-1 ring-zinc-800">
+                  <div>Linear</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <div className="w-1/3">
         <TrainConfig />
