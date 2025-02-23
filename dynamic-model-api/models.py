@@ -72,6 +72,8 @@ class TransformerModel(nn.Module):
     def __init__(self, userlayers, vocab_size, SEQUENCE_LENGTH):
         super(TransformerModel, self).__init__()
         
+        self.decoder_layers = nn.ModuleList()
+        
         # need to parse through user layers first to access embed_dim for other layers
         # ----- user defined decoders ------
         for l in userlayers:
@@ -81,7 +83,7 @@ class TransformerModel(nn.Module):
                 if layer_type == "Decoder":
                     embed_dim, heads, hidden_dim = layer_args
                     self.embed_dim = embed_dim # um this updates everytime because im lazy
-                    decoder_layer = LAYERS[layer_type](embed_dim, heads, hidden_dim, batch_first=True) # not sure if batch_first = True is neccessary
+                    decoder_layer = LAYERS[layer_type](embed_dim, heads, hidden_dim)
                     self.decoder_layers.append(decoder_layer)
                 else: # ------------  output layer ---------- ---> assuming that decoders/encoders come first and output layers come last
                     # dropout
@@ -95,7 +97,6 @@ class TransformerModel(nn.Module):
         self.emb = nn.Embedding(vocab_size, embed_dim) # OUTPUT: [batch_size, sequence_length, 100]
         # torch.nn.TransformerDecoderLayer(d_model, nhead, dim_feedforward=2048, dropout=0.1, activation=<function relu>, layer_norm_eps=1e-05, batch_first=False, norm_first=False, bias=True, device=None, dtype=None)
         
-        self.decoder_layers = nn.ModuleList()
         
 
     def forward(self, x):
@@ -111,7 +112,7 @@ class TransformerModel(nn.Module):
         out = self.linear_layer(x)
         
         return out
-
+    @staticmethod
     def generate_square_subsequent_mask(sz):
         mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
         mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
@@ -165,6 +166,7 @@ class TransformerData(Dataset):
         # remember --> only one target is being outputted each time!
         return input_seq, target_seq
     
+    @staticmethod
     def txt_dataset(inp): 
         if(inp == "alice"):
             file_path = "datasets/alice_1.txt"
@@ -416,6 +418,8 @@ class Train:
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    
+    print("hello")
 
     def plot_loss_graph(train_losses, n_epochs):
         plt.figure(figsize=(10, 6))
@@ -444,10 +448,11 @@ if __name__ == "__main__":
         ],
         "loss": "CrossEntropy",
         "optimizer": {"kind": "Adam", "lr": 0.001},
-        "epoch": 100,
+        "epoch": 10,
         "batch_size": 32,
     }
     
+    print(params["input"])
     dataset = TransformerData(params["input"])
 
     model = TransformerModel(params["layers"], dataset.vocab_size, dataset.sequence_length) # model is moved to device in train function
@@ -456,7 +461,7 @@ if __name__ == "__main__":
     
     t = TransformerTrain(
         model=model,
-        input=params["input"],
+        inp=params["input"],
         loss=params["loss"],
         optimizer=params["optimizer"],
         batch_size=params["batch_size"],

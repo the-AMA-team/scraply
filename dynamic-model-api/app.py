@@ -1,7 +1,14 @@
 from flask import Flask, request, send_file
-from models import DynamicModel, Train
+from models import (
+    DynamicModel,
+    Train,
+    TransformerModel,
+    TransformerData,
+    TransformerTrain,
+)
 from flask_cors import CORS
 from generate import Generate
+
 
 app = Flask(__name__)
 CORS(app)
@@ -69,6 +76,64 @@ def train():
         print("slay")
 
         RESULTS = t.train_test_log(n_epochs, batch_size)
+
+    except Exception as e:
+        print("Error:", e)
+        RESULTS = {"error": str(e)}
+
+    return {
+        "RESULTS": RESULTS, 
+    } # training loss
+
+
+@app.post("/transformertrain")
+def transformertrain():
+    # # example arguments
+    # embed_dim = 100
+    # heads = 2
+    # hidden_dim = 2048
+    # # example data
+    # params = {
+    #     "type": "transformer", # ADDED NEW PARAMETER
+    #     "input": "alice", # preprocess
+    #     "layers": [
+    #         {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+    #         {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+    #         {"kind": "Output", "args": 0.3},
+    #     ],
+    #     "loss": "CrossEntropy",
+    #     "optimizer": {"kind": "Adam", "lr": 0.001},
+    #     "epoch": 100,
+    #     "batch_size": 32,
+    # }
+
+    data = request.get_json()
+    print("Received data:", data)
+
+    inp = data["input"]
+    layers = data["layers"]
+    loss = data["loss"]
+    optimizer = data["optimizer"]
+    n_epochs = data["epoch"]
+    batch_size = data["batch_size"]
+
+    try:
+        dataset = TransformerData(inp)
+        model = TransformerModel(
+            layers, dataset.vocab_size, dataset.sequence_length
+        )  # model is moved to device in train function
+
+        t = TransformerTrain(
+            model = model,
+            inp = inp,
+            loss = loss,
+            optimizer = optimizer,
+            batch_size = batch_size,
+        )
+
+        print("it worked!")
+
+        RESULTS = t.train(n_epochs)
 
     except Exception as e:
         print("Error:", e)

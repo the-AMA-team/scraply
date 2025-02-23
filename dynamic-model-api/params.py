@@ -12,25 +12,6 @@ from torchvision.transforms import ToTensor
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
-
-# ex: datasets.MNIST(root="data", train=True, download=true, transform=transform)
-
-# maybe do this when the model is created
-def txt_dataset(): # return idk  
-    with open('data/alice_1.txt', 'r', encoding='utf-8') as file:
-        text = file.read()
-    # tokenize the text into words
-    words = text.split() 
-    # count unique words from text
-    word_counts = Counter(words)
-    # make list of the unique words ---> to create a vocabulary
-    vocab = list(word_counts.keys())
-    VOCAB_SIZE = len(vocab)
-    WORD_TO_INT = {word: i for i, word in enumerate(vocab)} # maps each word to a unique integer index
-    INT_TO_WORD = {i: word for word, i in WORD_TO_INT.items()} # maps each integer to a word
-    SEQUENCE_LENGTH = 64
-    SAMPLES = [words[i:i+SEQUENCE_LENGTH+1] for i in range(len(words)-SEQUENCE_LENGTH)] # training samples of 64 word length
-
             
     
 

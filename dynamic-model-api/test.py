@@ -2,23 +2,24 @@
 import requests
 
 # api-endpoint
-URL = "http://127.0.0.1:5000/train"
+URL = "http://127.0.0.1:5000/transformertrain"
 
+# example arguments
+embed_dim = 10
+heads = 2
+hidden_dim = 2048
+# example data
 params = {
-    "input": "pima",
+    "input": "alice", # preprocess
     "layers": [
-        {"kind": "Linear", "args": (8, 12)},
-        {"kind": "ReLU"},
-        {"kind": "Linear", "args": (12, 8)},
-        {"kind": "ReLU"},
-        {"kind": "Dropout", "args": 0.2}, # for testing!!!
-        {"kind": "Linear", "args": (8, 1)},
-        {"kind": "Sigmoid"},
+        {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+        {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+        {"kind": "Output", "args": 0.3},
     ],
-    "loss": "BCE",
+    "loss": "CrossEntropy",
     "optimizer": {"kind": "Adam", "lr": 0.001},
     "epoch": 100,
-    "batch_size": 10,
+    "batch_size": 32,
 }
 
 try:
