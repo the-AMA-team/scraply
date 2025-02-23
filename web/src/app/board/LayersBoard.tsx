@@ -35,6 +35,7 @@ interface LayersProps {
     boolean,
     React.Dispatch<React.SetStateAction<boolean>>,
   ];
+  showNotification: (title: string, body: string) => void;
 }
 
 const LayersBoard = ({
@@ -47,6 +48,7 @@ const LayersBoard = ({
   trainingResState,
   progressState,
   isLoadingSuggestionsState,
+  showNotification,
 }: LayersProps) => {
   const { canvasBlocks, setCanvasBlocks, activeBlock, drag } = useBoardStore();
   const [loss, setLoss] = lossState;
@@ -299,14 +301,21 @@ const LayersBoard = ({
                         epochs,
                         batchSize,
                       ),
-                    ).then((data: any) => {
-                      setTrainingRes(data.RESULTS);
-                      setProgress(
-                        Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
-                      );
-                      setIsTraining(false);
-                      setIsModalOpen(true);
-                    });
+                    )
+                      .then((data: any) => {
+                        setTrainingRes(data.RESULTS);
+                        setProgress(
+                          Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
+                        );
+                      })
+                      .finally(() => {
+                        setIsTraining(false);
+                        setIsModalOpen(true);
+                        showNotification(
+                          "Training Complete!",
+                          "Your model has been trained successfully.",
+                        );
+                      });
                   }}
                 >
                   {isTraining ? (
