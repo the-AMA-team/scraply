@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { startTransformerTraining } from "~/util/board.util";
+import { ResponsiveLine } from "@nivo/line";
 
 interface Decoder {
   title: string;
@@ -81,8 +82,7 @@ const Decoder: React.FC<DecoderProps> = ({
 const TrainConfig: React.FC<{
   decoders: Decoder[];
   dropout: number;
-  setDropout: React.Dispatch<React.SetStateAction<number>>;
-}> = ({ decoders, dropout, setDropout }) => {
+  }> = ({ decoders, dropout }) => {
   const [loss, setLoss] = useState("BCE");
   const [optimizer, setOptimizer] = useState("Adam");
   const [learningRate, setLearningRate] = useState(0.001);
@@ -90,6 +90,11 @@ const TrainConfig: React.FC<{
   const [batchSize, setBatchSize] = useState(10);
 
   const [isTraining, setIsTraining] = useState(false);
+  const [results, setResults] = useState<{train_loss: number[]} | null>(null);
+  const [graphData, setGraphData] = useState<{
+    id: string;
+    data: { x: number; y: number }[];
+  }[] | null>([{ id: "train_loss", data: [{x: 4, y: 0}, {x: 2, y: 1}] }]);
 
   const [temperature, setTemperature] = useState(0.1);
   const [prompt, setPrompt] = useState("");
@@ -195,9 +200,9 @@ const TrainConfig: React.FC<{
                   return {
                     kind: "Decoder",
                     args: [
-                      decoder.ffLinearLayers,
-                      decoder.saAttentionHeads,
                       decoder.saHiddenDim,
+                      decoder.saAttentionHeads,
+                      decoder.ffLinearLayers,
                     ],
                   };
                 });
@@ -218,6 +223,16 @@ const TrainConfig: React.FC<{
                 })
                   .then((data: any) => {
                     console.log(data);
+                    setResults(data.RESULTS);
+                    setGraphData([
+                      {
+                        id: "train_loss",
+                        data: data.RESULTS.train_loss.map((loss: number, i: number) => ({
+                          x: i,
+                          y: loss,
+                        })),
+                      },
+                    ]);
                   })
                   .finally(() => {
                     setIsTraining(false);
@@ -238,6 +253,59 @@ const TrainConfig: React.FC<{
               )}
             </button>
           </div>
+          {graphData && (
+              <div className="h-72 w-72 mt-2 text-center bg-zinc-50 rounded-md">
+                <ResponsiveLine
+                  data={graphData}
+                  margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
+                  enableGridX={false}
+                  enableGridY={false}
+                  xScale={{ type: "point" }}
+                  yScale={{
+                    type: "linear",
+                    min: "auto",
+                    max: "auto",
+                    stacked: true,
+                    reverse: false,
+                  }}
+                  colors={{ scheme: "accent" }}
+                  axisTop={null}
+                  axisRight={null}
+                  axisBottom={null}
+                  axisLeft={{
+                    tickSize: 5,
+                    tickPadding: 5,
+                    tickRotation: 0,
+                    legend: "Loss",
+                    legendOffset: -40,
+                    legendPosition: "middle",
+                  }}
+                  pointSize={2}
+                  pointColor={{ theme: "background" }}
+                  pointBorderWidth={2}
+                  pointBorderColor={{ from: "serieColor" }}
+                  pointLabelYOffset={-12}
+                  useMesh={true}
+                  legends={[
+                    {
+                      anchor: "bottom-right",
+                      direction: "column",
+                      justify: false,
+                      translateX: 100,
+                      translateY: 0,
+                      itemsSpacing: 0,
+                      itemDirection: "left-to-right",
+                      itemWidth: 80,
+                      itemHeight: 20,
+                      itemOpacity: 0.75,
+                      symbolSize: 12,
+                      symbolShape: "circle",
+                      symbolBorderColor: "rgba(0, 0, 0, .5)",
+                    },
+                  ]}
+                />
+              </div>
+            )}
         </div>
       </div>
       <div className="bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
@@ -303,6 +371,7 @@ const TrainConfig: React.FC<{
 const TransformersBoard = () => {
   const [decoders, setDecoders] = useState<Decoder[]>([]);
   const [dropout, setDropout] = useState(0.01);
+
 
   const handleAppendDecoder = () => {
     setDecoders((prev) => [
@@ -401,7 +470,6 @@ const TransformersBoard = () => {
         <TrainConfig
           decoders={decoders}
           dropout={dropout}
-          setDropout={setDropout}
         />
       </div>
     </div>

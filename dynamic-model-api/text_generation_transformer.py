@@ -87,6 +87,7 @@ class PositionalEncoding(nn.Module):
         pe[:, 1::2] = torch.cos(position * div_term)
         pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
+        
     def forward(self, x):
         """
         Inputs of forward function
@@ -105,9 +106,9 @@ class PositionalEncoding(nn.Module):
 
 """
 
-class TextGen(nn.Module):
+class TransformerModel(nn.Module):
     def __init__(self, vocab_size, embed_dim, num_layers, num_heads):
-        super(TextGen, self).__init__()
+        super(TransformerModel, self).__init__()
         self.pos_encoder = PositionalEncoding(max_len=SEQUENCE_LENGTH, d_model=embed_dim)
         self.emb = nn.Embedding(vocab_size, embed_dim)
         self.decoder_layer = nn.TransformerDecoderLayer(
@@ -139,10 +140,10 @@ class TextGen(nn.Module):
 
 """# training - hyperparameters & initialize model"""
 
-epochs = 200 # temp epochsrhgug
+epochs = 50 # temp epochsrhgug
 learning_rate = 0.001
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-model = TextGen(
+model = TransformerModel(
     vocab_size=vocab_size,
     embed_dim=100,
     num_layers=2,
