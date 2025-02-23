@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader, TensorDataset
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split  # --> pip install scikit-learn
 import math
+from collections import Counter
 
 from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 
@@ -151,9 +151,100 @@ class PositionalEncoding(nn.Module):
 
 # class TransformerTrain
 # class Transformer
+class TransformerData(Dataset): 
+    def __init__(self, inp):
+        self.vocab_size, self.sequence_length, self.word_to_int, self.int_to_word, self.samples = self.txt_dataset(inp)
+        
+    def __len__(self):
+        return len(self.samples) # number of samples
+    
+    def __getitem__(self, idx):
+        sample = self.samples[idx] # retrieving ith sample
+        input_seq = torch.LongTensor([self.word_to_int[word] for word in sample[:-1]]) # input
+        target_seq = torch.LongTensor([self.word_to_int[word] for word in sample[1:]]) # target words (slides over by 1 each time)
+        # remember --> only one target is being outputted each time!
+        return input_seq, target_seq
+    
+    def txt_dataset(inp): 
+        if(inp == "alice"):
+            file_path = "datasets/alice_1.txt"
+        if(inp == "shakespeare"):
+            file_path = "datasets/shakespeare.txt"
+            
+        with open(file_path, 'r', encoding='utf-8') as file:
+            text = file.read()
+        # tokenize the text into words
+        words = text.split() 
+        # count unique words from text
+        word_counts = Counter(words)
+        # make list of the unique words ---> to create a vocabulary
+        vocab = list(word_counts.keys())
+        VOCAB_SIZE = len(vocab)
+        SEQUENCE_LENGTH = 64
+        WORD_TO_INT = {word: i for i, word in enumerate(vocab)} # maps each word to a unique integer index
+        INT_TO_WORD = {i: word for word, i in WORD_TO_INT.items()} # maps each integer to a word
+        SAMPLES = [words[i:i+SEQUENCE_LENGTH+1] for i in range(len(words)-SEQUENCE_LENGTH)] # training samples of 64 word length
+        
+        return VOCAB_SIZE, SEQUENCE_LENGTH, WORD_TO_INT, INT_TO_WORD, SAMPLES
+    
 
 
 
+class TransformerTrain: # input is DATALOADERS 
+    def __init__(self, model, inp, loss, optimizer, batch_size):
+        self.dataset = TransformerData(inp)
+        self.dataloader = DataLoader(
+            self.dataset,
+            batch_size = batch_size,
+            shuffle = True,
+        )
+
+        self.device = (  # for GPU access --> works with CPU as well
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps" if torch.backends.mps.is_available() else "cpu"
+        )
+        print(f"Using {self.device} device")
+
+        # MOVE MODEL TO DEVICE
+        self.model = model.to(self.device)
+
+        self.loss_fn = LOSSES[loss]
+        self.optimizer = OPTIMIZERS[optimizer["kind"]](self.model.parameters(), optimizer["lr"])
+        
+        #print(model)
+    
+    def train(self, n_epochs):
+        size = len(self.dataloader.dataset)
+        
+        self.model.train()
+        
+        train_loss = []
+        
+        for epoch in range(n_epochs):
+            running_loss = 0
+            for input_seq, target_seq in self.dataloader:
+                input_seq, target_seq = input_seq.to(self.device), target_seq.to(self.device)
+                outputs = model(input_seq)
+                target_seq = target_seq.contiguous().view(-1)
+                outputs = outputs.view(-1, self.dataset.vocab_size)
+
+                loss = self.loss_fn(outputs, target_seq.view(-1))
+
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+                running_loss += loss.detach().cpu().numpy()
+            epoch_loss = running_loss / len(self.dataloader)
+            print(f"Epoch {epoch} loss: {epoch_loss:.3f}")
+            train_loss.append(epoch_loss)
+            
+        print("Done!")
+        # torch.cuda.empty_cache()
+        
+        return {"train_loss": train_loss}
+    
+    
 class Train:
     def __init__(self, model, input, loss, optimizer, batch_size):
         self.input = input
@@ -326,39 +417,44 @@ class Train:
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    def plot_loss_graph(train_losses, test_losses, n_epochs):
+    def plot_loss_graph(train_losses, n_epochs):
         plt.figure(figsize=(10, 6))
         plt.plot(
             range(1, n_epochs + 1), train_losses, label="Training Loss", color="blue"
         )
-        plt.plot(range(1, n_epochs + 1), test_losses, label="Testing Loss", color="red")
-        plt.title("Training and Testing Loss over Epochs")
+        plt.title("Training Loss over Epochs")
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
         plt.legend()
         plt.grid(True)
         plt.show()
 
+    # example arguments
+    embed_dim = 100
+    heads = 2
+    hidden_dim = 2048
+    # example data
     params = {
-        "input": "pima",
+        "type": "transformer", # ADDED NEW PARAMETER
+        "input": "alice", # preprocess
         "layers": [
-            {"kind": "Linear", "args": (8, 12)},
-            {"kind": "ReLU"},
-            {"kind": "Linear", "args": (12, 8)},
-            {"kind": "ReLU"},
-            {"kind": "Linear", "args": (8, 1)},
-            {"kind": "Sigmoid"},
+            {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+            {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+            {"kind": "Output", "args": 0.3},
         ],
-        "loss": "BCE",
+        "loss": "CrossEntropy",
         "optimizer": {"kind": "Adam", "lr": 0.001},
         "epoch": 100,
-        "batch_size": 10,
+        "batch_size": 32,
     }
+    
+    dataset = TransformerData(params["input"])
 
-    model = DynamicModel(params["layers"])
-    # model = DynamicModel(params["layers"]).to(device)
+    model = TransformerModel(params["layers"], dataset.vocab_size, dataset.sequence_length) # model is moved to device in train function
+
     print(model)
-    t = Train(
+    
+    t = TransformerTrain(
         model=model,
         input=params["input"],
         loss=params["loss"],
@@ -366,13 +462,10 @@ if __name__ == "__main__":
         batch_size=params["batch_size"],
     )
 
-    RESULTS = t.train_test_log(params["epoch"], batch_size=params["batch_size"])
+    RESULTS = t.train(params["epoch"])
 
     print("Results:")
-    print("Average Training Loss: ", RESULTS["avg_train_loss"])
-    print("Average Testing Loss: ", RESULTS["avg_test_loss"])
-    print("Average Training Accuracy: ", RESULTS["avg_train_acc"])
-    print("Average Testing Accuracy: ", RESULTS["avg_test_acc"])
+    print("Training Loss: ", RESULTS["train_loss"])
 
     # In your main function or after calling train_test_log
-    plot_loss_graph(RESULTS["train_losses"], RESULTS["test_losses"], params["epoch"])
+    plot_loss_graph(RESULTS["train_loss"], params["epoch"])
