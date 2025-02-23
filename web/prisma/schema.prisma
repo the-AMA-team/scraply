@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+type AttemptArchetecture {
+  batch_size Int?
+  epoch      Int?
+  layers     AttemptArchetectureLayers[]
+  loss       String?
+  optimizer  AttemptArchetectureOptimizer?
+}
+
+type AttemptArchetectureLayers {
+  args Int[]
+  kind String
+}
+
+type AttemptArchetectureOptimizer {
+  kind String
+  lr   Float
+}
+
+model Attempt {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  /// Multiple data types found: String: 20%, AttemptArchetecture: 80% out of 15 sampled entries
+  archetecture Json
+  lastLoss     Float
+  level        String
+  rating       BigInt
+  userId       String
+}
+
+model Classrooms {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  classroomName String
+  students      String[]
+  teacher       String
+}
+
+model User {
+  id   String @id @map("_id")
+  name String
+}
