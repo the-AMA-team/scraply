@@ -6,9 +6,14 @@ import {
   closestCenter,
   DragOverlay,
 } from "@dnd-kit/core";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useBoardStore } from "~/state/boardStore";
-import { startTraining, downloadFile, getConfig } from "~/util/board.util";
+import {
+  startTraining,
+  downloadFile,
+  getConfig,
+  getArchitectureSuggestion,
+} from "~/util/board.util";
 import { LAYER_BLOCKS } from "../../util/LAYER_BLOCKS";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
@@ -26,6 +31,10 @@ interface LayersProps {
     React.Dispatch<React.SetStateAction<any | null>>,
   ];
   progressState: [number, React.Dispatch<React.SetStateAction<number>>];
+  isLoadingSuggestionsState: [
+    boolean,
+    React.Dispatch<React.SetStateAction<boolean>>,
+  ];
 }
 
 const LayersBoard = ({
@@ -37,8 +46,9 @@ const LayersBoard = ({
   isTrainingState,
   trainingResState,
   progressState,
+  isLoadingSuggestionsState,
 }: LayersProps) => {
-  const { canvasBlocks, activeBlock, drag } = useBoardStore();
+  const { canvasBlocks, setCanvasBlocks, activeBlock, drag } = useBoardStore();
   const [loss, setLoss] = lossState;
   const [optimizer, setOptimizer] = optimizerState;
   const [learningRate, setLearningRate] = learningRateState;
@@ -47,6 +57,9 @@ const LayersBoard = ({
   const [isTraining, setIsTraining] = isTrainingState;
   const [trainingRes, setTrainingRes] = trainingResState;
   const [progress, setProgress] = progressState;
+
+  const [isLoadingSuggestions, setIsLoadingSuggestions] =
+    isLoadingSuggestionsState;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -128,7 +141,40 @@ const LayersBoard = ({
         {/* Canvas area */}
         <div className="mr-10 flex-grow">
           <div className="bg-zinc-900 p-2 text-2xl text-zinc-500">Canvas</div>
-          <DroppableCanvas />
+          <div className="relative">
+            <DroppableCanvas />
+            <button
+              title="Get suggested architecture using AI"
+              className={`absolute bottom-4 right-4 rounded-lg bg-blue-500 px-3 py-2 shadow-lg ring-indigo-500 ring-offset-2 ring-offset-zinc-900 transition-all duration-100 ${isLoadingSuggestions ? "w-16 bg-indigo-500 p-0" : "hover:bg-indigo-600 hover:ring-2 active:bg-indigo-500"}`}
+              disabled={isLoadingSuggestions}
+              onClick={() => {
+                setIsLoadingSuggestions(true);
+                getArchitectureSuggestion("pima")
+                  .then((data) => {
+                    const layers = data.map((l) => {
+                      return {
+                        id: `${l.label}-${Math.random()}`,
+                        label: l.label,
+                        color: l.color,
+                        neurons: l.neurons,
+                        otherParam: l.otherParam,
+                        activationFunction: l.activationFunction,
+                      };
+                    });
+                    setCanvasBlocks(layers);
+                  })
+                  .finally(() => {
+                    setIsLoadingSuggestions(false);
+                  });
+              }}
+            >
+              {isLoadingSuggestions ? (
+                <img src="dino-running.gif" className="w-14" />
+              ) : (
+                "✨"
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Toolbox area */}

@@ -19,6 +19,8 @@ const Board = () => {
   const trainingResState = useState<any | null>(null);
   const progressState = useState(0);
 
+  const isLoadingSuggestionsState = useState(false);
+
   return (
     <div
       className={`${mode === AppMode.TRANSFORMERS ? "h-full min-h-screen" : "h-screen overflow-hidden"} bg-zinc-900 text-white`}
@@ -47,6 +49,7 @@ const Board = () => {
             isTrainingState={isTrainingState}
             trainingResState={trainingResState}
             progressState={progressState}
+            isLoadingSuggestionsState={isLoadingSuggestionsState}
           />
         )}
       </div>

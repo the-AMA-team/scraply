@@ -91,3 +91,19 @@ export const startTraining = async (config: Config) => {
       return data;
     });
 };
+
+export const getArchitectureSuggestion = async (dataset: string) => {
+  return await fetch("/api/get-suggestions", {
+    method: "POST",
+    body: JSON.stringify({ dataset }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((res) => {
+      return res.json();
+    })
+    .then((data) => {
+      return data;
+    });
+};

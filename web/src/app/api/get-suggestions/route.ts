@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
         { role: "system", content: systemPrompt() },
         { role: "user", content: userPrompt(dataset) },
       ],
-      temperature: 0.2,
+      temperature: 0.1,
     });
 
     const response = completion.choices[0]?.message.content;

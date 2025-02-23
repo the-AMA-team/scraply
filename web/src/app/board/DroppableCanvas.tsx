@@ -19,7 +19,7 @@ const DroppableCanvas = ({}: DroppableCanvasProps) => {
   return (
     <div
       ref={setNodeRef}
-      className="z-10 flex h-full flex-col items-center whitespace-nowrap rounded-3xl border border-dashed border-blue-600 bg-zinc-900 p-2"
+      className="z-10 flex min-h-[600px] flex-col items-center whitespace-nowrap rounded-3xl border border-dashed border-blue-600 bg-zinc-900 p-2 pb-[100px]"
     >
       <SortableContext
         items={canvasBlocks.map((block: UILayer) => block.id)}

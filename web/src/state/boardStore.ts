@@ -89,6 +89,10 @@ const boardStore = createStoreWithProducer(produce, {
         block.id === id ? { ...block, otherParam } : block,
       );
     },
+
+    setCanvasBlocks: (context, event: { canvasBlocks: UILayer[] }) => {
+      context.canvasBlocks = event.canvasBlocks;
+    },
   },
 });
 
@@ -114,6 +118,10 @@ export const useBoardStore = () => {
     },
     changeOtherParam: (id: string, otherParam: number) => {
       boardStore.send({ type: "changeOtherParam", id, otherParam });
+    },
+
+    setCanvasBlocks: (canvasBlocks: UILayer[]) => {
+      boardStore.send({ type: "setCanvasBlocks", canvasBlocks });
     },
 
     drag: {
