@@ -2,7 +2,13 @@ import "~/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
-import { ClerkProvider, SignedOut, SignInButton } from "@clerk/nextjs";
+import {
+  ClerkProvider,
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+} from "@clerk/nextjs";
 
 export const metadata: Metadata = {
   title: "rawr.",
@@ -30,6 +36,17 @@ export default function RootLayout({
               </SignInButton>
             </div>
           </SignedOut>
+          <SignedIn>
+            <div className="flex justify-between bg-zinc-800 text-white">
+              <div className="flex">
+                <img src="favicon.png" className="mx-4 w-12" alt="" />
+                <div className="py-4 pr-7">rawr</div>
+              </div>
+              <div className="my-auto px-2">
+                <UserButton />
+              </div>
+            </div>
+          </SignedIn>
           {children}
         </body>
       </html>
