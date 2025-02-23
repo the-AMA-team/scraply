@@ -4,6 +4,7 @@ import LayersBoard from "./LayersBoard";
 import { AppMode } from "~/types";
 import Toggle from "../_components/Toggle";
 import TransformersBoard from "./TransformersBoard";
+import SignedInNav from "../_components/SignedInNav";
 
 const Board = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.LAYERS);
@@ -41,39 +42,42 @@ const Board = () => {
   };
 
   return (
-    <div
-      className={`${mode === AppMode.TRANSFORMERS ? "h-full min-h-screen" : "h-screen overflow-hidden"} bg-zinc-900 text-white`}
-    >
-      <div>
-        <div className="flex justify-center p-4">
-          <Toggle
-            color="blue"
-            option2="TRANSFORMERS"
-            option1="LAYERS"
-            selected={mode}
-            setSelected={
-              setMode as React.Dispatch<React.SetStateAction<string>>
-            }
-          />
+    <>
+      <SignedInNav />
+      <div
+        className={`${mode === AppMode.TRANSFORMERS ? "h-full min-h-screen" : "h-screen overflow-hidden"} bg-zinc-900 text-white`}
+      >
+        <div>
+          <div className="flex justify-center p-4">
+            <Toggle
+              color="blue"
+              option2="TRANSFORMERS"
+              option1="LAYERS"
+              selected={mode}
+              setSelected={
+                setMode as React.Dispatch<React.SetStateAction<string>>
+              }
+            />
+          </div>
+          {mode === AppMode.TRANSFORMERS ? (
+            <TransformersBoard />
+          ) : (
+            <LayersBoard
+              lossState={lossState}
+              optimizerState={optimizerState}
+              learningRateState={learningRateState}
+              epochState={epochState}
+              batchSizeState={batchSizeState}
+              isTrainingState={isTrainingState}
+              trainingResState={trainingResState}
+              progressState={progressState}
+              isLoadingSuggestionsState={isLoadingSuggestionsState}
+              showNotification={showNotification}
+            />
+          )}
         </div>
-        {mode === AppMode.TRANSFORMERS ? (
-          <TransformersBoard />
-        ) : (
-          <LayersBoard
-            lossState={lossState}
-            optimizerState={optimizerState}
-            learningRateState={learningRateState}
-            epochState={epochState}
-            batchSizeState={batchSizeState}
-            isTrainingState={isTrainingState}
-            trainingResState={trainingResState}
-            progressState={progressState}
-            isLoadingSuggestionsState={isLoadingSuggestionsState}
-            showNotification={showNotification}
-          />
-        )}
       </div>
-    </div>
+    </>
   );
 };
 
