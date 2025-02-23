@@ -227,7 +227,7 @@ class TransformerTrain: # input is DATALOADERS
             running_loss = 0
             for input_seq, target_seq in self.dataloader:
                 input_seq, target_seq = input_seq.to(self.device), target_seq.to(self.device)
-                outputs = model(input_seq)
+                outputs = self.model(input_seq)
                 target_seq = target_seq.contiguous().view(-1)
                 outputs = outputs.view(-1, self.dataset.vocab_size)
 
