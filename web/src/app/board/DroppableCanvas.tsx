@@ -34,7 +34,6 @@ const DroppableCanvas = ({}: DroppableCanvasProps) => {
           />
         ))}
       </SortableContext>
-      {/* <div className="h-10 pointer-events-none" /> Spacer at the bottom */}
     </div>
   );
 };

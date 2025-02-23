@@ -29,7 +29,7 @@ const DraggableBlock = ({ id, label, color }: DraggableBlockProps) => {
       }}
       {...listeners}
       // {...attributes}
-      className={`m-4 cursor-grab rounded-2xl p-7 text-center ${
+      className={`m-4 cursor-grab rounded-2xl px-7 py-5 text-center ${
         active?.id == id && "opacity-0"
       }`}
     >

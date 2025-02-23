@@ -82,6 +82,13 @@ const boardStore = createStoreWithProducer(produce, {
         block.id === id ? { ...block, neurons } : block,
       );
     },
+
+    changeOtherParam: (context, event: { id: string; otherParam: number }) => {
+      const { id, otherParam } = event;
+      context.canvasBlocks = context.canvasBlocks.map((block) =>
+        block.id === id ? { ...block, otherParam } : block,
+      );
+    },
   },
 });
 
@@ -104,6 +111,9 @@ export const useBoardStore = () => {
     },
     changeNeurons: (id: string, neurons: number) => {
       boardStore.send({ type: "changeNeurons", id, neurons });
+    },
+    changeOtherParam: (id: string, otherParam: number) => {
+      boardStore.send({ type: "changeOtherParam", id, otherParam });
     },
 
     drag: {

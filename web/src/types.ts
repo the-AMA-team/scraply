@@ -3,6 +3,7 @@ export interface UILayer {
   label: string;
   color: string;
   neurons: number;
+  otherParam?: number;
   activationFunction: ActivationFunction;
 }
 

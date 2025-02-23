@@ -9,11 +9,28 @@ export const LAYER_BLOCKS: UILayer[] = [
     neurons: 8,
   },
   {
-    id: "conv",
-    label: "Conv",
+    id: "conv1D",
+    label: "Conv1D",
     color: "#FFD620",
     activationFunction: "ReLU",
     neurons: 8,
+    otherParam: 3,
+  },
+  {
+    id: "conv2D",
+    label: "Conv2D",
+    color: "#FFD620",
+    activationFunction: "ReLU",
+    neurons: 8,
+    otherParam: 3,
+  },
+  {
+    id: "conv3D",
+    label: "Conv3D",
+    color: "#FFD620",
+    activationFunction: "ReLU",
+    neurons: 8,
+    otherParam: 3,
   },
   {
     id: "rnn",
@@ -21,6 +38,7 @@ export const LAYER_BLOCKS: UILayer[] = [
     color: "#FF8C20",
     activationFunction: "ReLU",
     neurons: 8,
+    otherParam: 3,
   },
   {
     id: "gru",
@@ -28,6 +46,7 @@ export const LAYER_BLOCKS: UILayer[] = [
     color: "#FF4920",
     activationFunction: "ReLU",
     neurons: 8,
+    otherParam: 3,
   },
   {
     id: "flatten",

@@ -17,7 +17,9 @@ export const getConfig = (
     const nextNeuron = blocks[i + 1]?.neurons || 1; // Default to 1 if no next block, could change based on the dataset
     layers.push({
       kind: block.label,
-      args: [currentNeuron, nextNeuron],
+      args: block.otherParam
+        ? [currentNeuron, nextNeuron, block.otherParam]
+        : [currentNeuron, nextNeuron],
     });
 
     if (block.activationFunction) {
@@ -34,6 +36,7 @@ export const getConfig = (
     optimizer: { kind: optimizer, lr: learningRate },
     epoch,
     batch_size,
+    learning_rate: learningRate,
   };
 
   return config;
