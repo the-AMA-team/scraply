@@ -7,6 +7,7 @@ from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader, TensorDataset
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split  # --> pip install scikit-learn
+import math
 
 from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 
@@ -60,6 +61,97 @@ class DynamicModel(nn.Module):
             x = l(x)
 
         return x
+
+
+class TransformerModel(nn.Module):
+    # embed_dim, heads, hidden_dim
+    # get vocab_size & SEQUENCE_LENGTH from data procressing
+
+# sequential = nn.Sequential(*modules)
+
+    def __init__(self, userlayers, vocab_size, SEQUENCE_LENGTH):
+        super(TransformerModel, self).__init__()
+        
+        # need to parse through user layers first to access embed_dim for other layers
+        # ----- user defined decoders ------
+        for l in userlayers:
+            layer_type = l["kind"]
+            if layer_type in LAYERS.keys():  # is a layer
+                layer_args = l["args"]
+                if layer_type == "Decoder":
+                    embed_dim, heads, hidden_dim = layer_args
+                    self.embed_dim = embed_dim # um this updates everytime because im lazy
+                    decoder_layer = LAYERS[layer_type](embed_dim, heads, hidden_dim, batch_first=True) # not sure if batch_first = True is neccessary
+                    self.decoder_layers.append(decoder_layer)
+                else: # ------------  output layer ---------- ---> assuming that decoders/encoders come first and output layers come last
+                    # dropout
+                    # linear layer
+                    if layer_type == "Output":
+                        p = layer_args
+                        self.dropout_layer = LAYERS[layer_type](p)
+                        self.linear_layer = nn.Linear(embed_dim, vocab_size) # logits of the next word prediction
+
+        self.pos_encoder = PositionalEncoding(max_len=SEQUENCE_LENGTH, d_model=embed_dim)
+        self.emb = nn.Embedding(vocab_size, embed_dim) # OUTPUT: [batch_size, sequence_length, 100]
+        # torch.nn.TransformerDecoderLayer(d_model, nhead, dim_feedforward=2048, dropout=0.1, activation=<function relu>, layer_norm_eps=1e-05, batch_first=False, norm_first=False, bias=True, device=None, dtype=None)
+        
+        self.decoder_layers = nn.ModuleList()
+        
+
+    def forward(self, x):
+        emb = self.emb(x) # embedding
+        input_mask = self.generate_square_subsequent_mask(x.size(1)).to(x.device) # make input mask
+        x = self.pos_encoder(emb)
+        # decoder initialization time!
+        # x = self.decoder_layer(x, memory=x, tgt_mask=input_mask, memory_mask=input_mask)
+        for decoder in self.decoder_layers:
+            x = decoder(x, memory=x, tgt_mask=input_mask, memory_mask=input_mask)
+        
+        x = self.dropout_layer(x)
+        out = self.linear_layer(x)
+        
+        return out
+
+    def generate_square_subsequent_mask(sz):
+        mask = (torch.triu(torch.ones(sz, sz)) == 1).transpose(0, 1)
+        mask = mask.float().masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        return mask
+    
+
+# if type = 'transformer' then run using this function:
+# class TransformerModel(nn.Module):
+#     def __init__(self, layers):
+#         super().__init__()
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, max_len, d_model, dropout=0.1):
+        """
+        :param max_len: Input length sequence.
+        :param d_model: Embedding dimension.
+        :param dropout: Dropout value (default=0.1)
+        """
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)
+        self.register_buffer('pe', pe)
+        
+    def forward(self, x):
+        x = x + self.pe[:, :x.size(1)]  # first generate positional encodings
+        return self.dropout(x) # do some dropout i guess
+        #     input: [sequence length, batch size, embed dim]
+        #     output: [sequence length, batch size, embed dim]
+
+# run if layer = decoder
+# class TransformerModel
+
+# class TransformerTrain
+# class Transformer
+
 
 
 class Train:
@@ -217,7 +309,6 @@ class Train:
         avg_test_loss = sum(test_losses) / len(test_losses)
 
         print("Done!")
-        print("slayy2")
         # torch.cuda.empty_cache()
 
         return {
