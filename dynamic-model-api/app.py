@@ -157,6 +157,7 @@ def transformertrain():
 
 @app.post("/transformertest")
 def transformertest():
+    print("HELLLLLLLLLLOOOOOOOOOOO")
     # PRE DEFINED MODEL FOR DEMO PURPOSES
     # example arguments
     embed_dim = 100
@@ -182,17 +183,20 @@ def transformertest():
     optimizer = data["optimizer"]
     n_epochs = data["epoch"]
     batch_size = data["batch_size"]
+    
+
 
     infer_data = request.get_json()
     print("Received data:", infer_data)
 
     temperature = infer_data["temperature"]
     prompt = infer_data["prompt"]
+    generate_length = 100  # this should be an actual argument in the future
+    RESULTS = {}
 
     # hardcode example decoder model for now
 
     try:
-
         # initialize model here (using user architecture)
         # move model to device
         # model.load using state_dict
@@ -203,8 +207,7 @@ def transformertest():
         # generate text using model.generate_text()
         # return generated text
 
-
-        #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         dataset = TransformerData(inp)
 
@@ -213,22 +216,17 @@ def transformertest():
         )  # model is moved to device in train function
 
         model.load_state_dict(torch.load("datasets/model.pth"))  # load model weights
-        
-        
-
-
-
-
-
+        sample = model.text_generator(
+            dataset, prompt, generate_length, temperature=temperature, top_k=None
+        )  # generate text
+        print("Generated text:", sample)
 
         print("OH YEAHHAHAH IT WORKEDDDD AaAAAAaaAAA!")
 
-        RESULTS = 
+        RESULTS = {"text": sample}
 
     except Exception as e:
         print("Error:", e)
         RESULTS = {"error": str(e)}
 
-    return {
-        "RESULTS": RESULTS,
-    }
+    return RESULTS

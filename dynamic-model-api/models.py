@@ -159,7 +159,7 @@ class TransformerModel(nn.Module):
         self.eval()
         sample = sentence
         for i in range(generate_length):
-            int_vector = self.return_int_vector(sample)
+            int_vector = self.return_int_vector(sample, TransformerData)
             if len(int_vector) >= TransformerData.sequence_length - 1:
                 break
             input_tensor = int_vector
@@ -277,7 +277,9 @@ class TransformerTrain:  # input is DATALOADERS
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps" if torch.backends.mps.is_available() else "cpu"
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
         )
         print(f"Using {self.device} device")
 
@@ -301,8 +303,9 @@ class TransformerTrain:  # input is DATALOADERS
         for epoch in range(n_epochs):
             running_loss = 0
             for input_seq, target_seq in self.dataloader:
-                input_seq, target_seq = input_seq.to(self.device), target_seq.to(
-                    self.device
+                input_seq, target_seq = (
+                    input_seq.to(self.device),
+                    target_seq.to(self.device),
                 )
                 outputs = self.model(input_seq)
                 target_seq = target_seq.contiguous().view(-1)
@@ -337,7 +340,9 @@ class Train:
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps" if torch.backends.mps.is_available() else "cpu"
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
         )
         print(f"Using {self.device} device")
 
@@ -467,7 +472,7 @@ class Train:
         test_losses = []
         test_accs = []
         for t in range(n_epochs):
-            print(f"Epoch {t+1}\n-------------------------------")
+            print(f"Epoch {t + 1}\n-------------------------------")
             avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
             avg_test_loss, test_avg_acc = self.test(n_epochs, batch_size)
 
@@ -569,7 +574,9 @@ class Inference:
         self.device = (  # for GPU access --> works with CPU as well
             "cuda"
             if torch.cuda.is_available()
-            else "mps" if torch.backends.mps.is_available() else "cpu"
+            else "mps"
+            if torch.backends.mps.is_available()
+            else "cpu"
         )
         print(f"Using {self.device} device")
 
