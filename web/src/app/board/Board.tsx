@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import LayersBoard from "./LayersBoard";
 import { AppMode } from "~/types";
 import Toggle from "../_components/Toggle";
@@ -20,6 +20,25 @@ const Board = () => {
   const progressState = useState(0);
 
   const isLoadingSuggestionsState = useState(false);
+
+  const [permission, setPermission] = useState(Notification.permission);
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      Notification.requestPermission().then(setPermission);
+    }
+    console.log(permission);
+  }, []);
+
+  const showNotification = (title: string, body: string) => {
+    if (permission === "granted") {
+      console.log("first");
+      new Notification(title, {
+        body,
+        icon: "favicon.png",
+      });
+    }
+  };
 
   return (
     <div
@@ -50,6 +69,7 @@ const Board = () => {
             trainingResState={trainingResState}
             progressState={progressState}
             isLoadingSuggestionsState={isLoadingSuggestionsState}
+            showNotification={showNotification}
           />
         )}
       </div>
