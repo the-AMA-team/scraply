@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 # ex: datasets.MNIST(root="data", train=True, download=true, transform=transform)
 
 # maybe do this when the model is created
-def alice_dataset(): # return idk  
+def txt_dataset(): # return idk  
     with open('data/alice_1.txt', 'r', encoding='utf-8') as file:
         text = file.read()
     # tokenize the text into words
@@ -36,7 +36,10 @@ def alice_dataset(): # return idk
 
 DATALOADERS = {
     "alice": { # dataset for decoder-only transformer, demonstrating text generation
-        "file": "data/alice_1.txt"
+        "file": "datasets/alice_1.txt"
+    },
+    "shakespeare":{
+        "file": "datasets/shakespeare.txt"
     },
     "pima": {
         "X": pd.read_csv("datasets/pima-indians-diabetes.csv").iloc[:, :-1].values,
