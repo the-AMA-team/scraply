@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { PrismaClient } from '@prisma/client';
 import prisma from '../../../util/connect'
+/*
+curl -H 'Content-Type: application/json' \
+      -d '{ "classroomName":"Science1","student":"lalwani"}' \
+      -X POST \
+      http://localhost:3000/api/add-student */
 
 // code for updating the classrooms
 export const POST = async (req: NextRequest) => {
   try {
-    const { teacherEmail, student } = await req.json();
+    const { classroomName, student } = await req.json();
 
-    console.log(teacherEmail, student);
+    console.log(classroomName,  student);
 
     // const updatedAttempt = await prisma.attempt.updateMany({
     //     where: {
@@ -19,8 +24,8 @@ export const POST = async (req: NextRequest) => {
 
     const classroom = await prisma.classrooms.findFirst({
         where: {
-            teacher: teacherEmail,
-            // classroomName: classroomName
+            // teacher: teacherEmail,
+            classroomName: classroomName
         }
     })
 
@@ -35,7 +40,7 @@ export const POST = async (req: NextRequest) => {
 
     const addStudent = await prisma.classrooms.updateMany({
         where: {
-            teacher: teacherEmail,
+            classroomName: classroomName,
         },
         data: {
             students: curStudents

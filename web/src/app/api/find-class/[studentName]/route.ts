@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from '../../../../util/connect'
 
-//FIND TEACHER CLASSES
+//FIND STUDENT CLASSES
 
 export const GET = async (req: NextRequest, { params }: any) => {
   try {
-    const { teacherEmail } = await params;
+    const { studentName } = await params;
 
-    const classrooms = await prisma.classrooms.findMany({
-      where: {
-        teacher: teacherEmail,
-      },
-    });
+    const classrooms = await prisma.classrooms.findMany({});
+
+    for (let i = 0; i < classrooms.length; i++) {
+      if (classrooms[i].students.includes(studentName)) {
+        return NextResponse.json({ classroom: classrooms[i] }, { status: 200 });
+      }
+    }
 
     // console.log("Classrooms found:", classrooms);
 
