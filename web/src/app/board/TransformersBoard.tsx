@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { startTransformerTraining } from "~/util/board.util";
 
 interface Decoder {
   title: string;
@@ -77,7 +78,11 @@ const Decoder: React.FC<DecoderProps> = ({
   );
 };
 
-const TrainConfig = () => {
+const TrainConfig: React.FC<{
+  decoders: Decoder[];
+  dropout: number;
+  setDropout: React.Dispatch<React.SetStateAction<number>>;
+}> = ({ decoders, dropout, setDropout }) => {
   const [loss, setLoss] = useState("BCE");
   const [optimizer, setOptimizer] = useState("Adam");
   const [learningRate, setLearningRate] = useState(0.001);
@@ -85,8 +90,6 @@ const TrainConfig = () => {
   const [batchSize, setBatchSize] = useState(10);
 
   const [isTraining, setIsTraining] = useState(false);
-  const [trainingRes, setTrainingRes] = useState<any | null>(null);
-  const [progress, setProgress] = useState(0);
 
   const [temperature, setTemperature] = useState(0.1);
   const [prompt, setPrompt] = useState("");
@@ -175,20 +178,65 @@ const TrainConfig = () => {
               onChange={(e) => setBatchSize(parseInt(e.target.value))}
             />
           </div>
-          <div className="m-2 flex justify-center">
-            <div className="flex rounded-2xl bg-blue-500 px-4 py-2 text-white">
-              <button
-                disabled={isTraining}
-                className={`text-lg transition-all ease-in-out ${
-                  !isTraining &&
-                  "hover:bg-indigo-600 hover:ring-2 active:bg-indigo-500"
-                } ring-indigo-500 duration-300 ${
-                  isTraining && "animate-pulse"
-                }`}
-              >
-                {isTraining ? "Training..." : "Train"}
-              </button>
-            </div>
+          <div
+            className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-all duration-300`}
+          >
+            <button
+              disabled={isTraining}
+              className={`rounded-2xl bg-zinc-700 px-6 py-2 text-lg transition-all ease-in-out ${
+                !isTraining &&
+                "hover:bg-indigo-600 hover:px-8 hover:ring-2 active:bg-indigo-500 active:px-9"
+              } ring-indigo-500 duration-300 ${
+                isTraining && "animate-bounce px-9 ring-2 ring-zinc-600"
+              }`}
+              onClick={() => {
+                setIsTraining(true);
+                const l = decoders.map((decoder) => {
+                  return {
+                    kind: "Decoder",
+                    args: [
+                      decoder.ffLinearLayers,
+                      decoder.saAttentionHeads,
+                      decoder.saHiddenDim,
+                    ],
+                  };
+                });
+                l.push({
+                  kind: "Output",
+                  args: dropout,
+                });
+                startTransformerTraining({
+                  loss,
+                  optimizer: {
+                    kind: optimizer,
+                    lr: learningRate,
+                  },
+                  epoch: epochs,
+                  batch_size: batchSize,
+                  input: "alice",
+                  layers: l,
+                })
+                  .then((data: any) => {
+                    console.log(data);
+                  })
+                  .finally(() => {
+                    setIsTraining(false);
+                    // showNotification(
+                    //   "Training Complete!",
+                    //   "Your model has been trained successfully.",
+                    // );
+                  });
+              }}
+            >
+              {isTraining ? (
+                <div className="flex items-center">
+                  <div>Training</div>{" "}
+                  <img src="dino-running.gif" className="w-14" />
+                </div>
+              ) : (
+                "Train"
+              )}
+            </button>
           </div>
         </div>
       </div>
@@ -350,7 +398,11 @@ const TransformersBoard = () => {
         </div>
       </div>
       <div className="w-1/3">
-        <TrainConfig />
+        <TrainConfig
+          decoders={decoders}
+          dropout={dropout}
+          setDropout={setDropout}
+        />
       </div>
     </div>
   );

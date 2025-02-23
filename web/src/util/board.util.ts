@@ -1,4 +1,4 @@
-import { Config, UILayer } from "~/types";
+import { Config, TransformerConfig, UILayer } from "~/types";
 
 export const getConfig = (
   input: string,
@@ -104,6 +104,24 @@ export const getArchitectureSuggestion = async (dataset: string) => {
       return res.json();
     })
     .then((data) => {
+      return data;
+    });
+};
+
+export const startTransformerTraining = async (config: TransformerConfig) => {
+  console.log(config);
+  return await fetch("http://127.0.0.1:5000/transformertrain", {
+    method: "POST",
+    body: JSON.stringify(config),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((res) => {
+      return res.json();
+    })
+    .then((data) => {
+      console.log(data);
       return data;
     });
 };

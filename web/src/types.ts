@@ -40,6 +40,27 @@ export interface Config {
   batch_size: number;
 }
 
+export interface TransformerConfig {
+  input: string;
+  layers: (
+    | {
+        kind: string;
+        args: number[];
+      }
+    | {
+        kind: string;
+        args: number;
+      }
+  )[];
+  loss: string;
+  optimizer: {
+    kind: string;
+    lr: number;
+  };
+  epoch: number;
+  batch_size: number;
+}
+
 export enum AppMode {
   LAYERS = "LAYERS",
   TRANSFORMERS = "TRANSFORMERS",

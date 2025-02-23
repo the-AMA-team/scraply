@@ -82,8 +82,8 @@ def train():
         RESULTS = {"error": str(e)}
 
     return {
-        "RESULTS": RESULTS, 
-    } # training loss
+        "RESULTS": RESULTS,
+    }  # training loss
 
 
 @app.post("/transformertrain")
@@ -94,7 +94,6 @@ def transformertrain():
     # hidden_dim = 2048
     # # example data
     # params = {
-    #     "type": "transformer", # ADDED NEW PARAMETER
     #     "input": "alice", # preprocess
     #     "layers": [
     #         {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
@@ -124,11 +123,11 @@ def transformertrain():
         )  # model is moved to device in train function
 
         t = TransformerTrain(
-            model = model,
-            inp = inp,
-            loss = loss,
-            optimizer = optimizer,
-            batch_size = batch_size,
+            model=model,
+            inp=inp,
+            loss=loss,
+            optimizer=optimizer,
+            batch_size=batch_size,
         )
 
         print("it worked!")
