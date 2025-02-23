@@ -142,3 +142,78 @@ def transformertrain():
     return {
         "RESULTS": RESULTS,
     }
+
+
+
+
+@app.post("/transformertest")
+def transformertest():
+    # # example arguments
+    # embed_dim = 100
+    # heads = 2
+    # hidden_dim = 2048
+    # # example data
+    # params = {
+    #     "input": "alice", # preprocess
+    #     "layers": [
+    #         {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+    #         {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+    #         {"kind": "Output", "args": 0.3},
+    #     ],
+    #     "loss": "CrossEntropy",
+    #     "optimizer": {"kind": "Adam", "lr": 0.001},
+    #     "epoch": 100,
+    #     "batch_size": 32,
+    # }
+
+    data = request.get_json()
+    print("Received data:", data)
+
+    temperature = data["temperature"]
+    prompt = data["prompt"]
+    
+    
+    
+    # hardcode example decoder model for now
+
+    try:
+        
+        # initialize model here (using user architecture)
+        # move model to device
+        # model.load using state_dict
+        
+        # inference time!
+        # use vocab_size, sequence_length, and int_to_word from data --> from request data
+        # use temperature and prompt
+        # generate text using model.generate_text()
+        # return generated text
+        
+        
+        
+        
+        
+        
+        dataset = TransformerData(inp)
+        model = TransformerModel(
+            layers, dataset.vocab_size, dataset.sequence_length
+        )  # model is moved to device in train function
+
+        t = TransformerTrain(
+            model = model,
+            inp = inp,
+            loss = loss,
+            optimizer = optimizer,
+            batch_size = batch_size,
+        )
+
+        print("it worked!")
+
+        RESULTS = t.train(n_epochs)
+
+    except Exception as e:
+        print("Error:", e)
+        RESULTS = {"error": str(e)}
+
+    return {
+        "RESULTS": RESULTS,
+    }

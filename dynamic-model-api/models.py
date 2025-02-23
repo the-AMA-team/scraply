@@ -244,7 +244,12 @@ class TransformerTrain: # input is DATALOADERS
         print("Done!")
         # torch.cuda.empty_cache()
         
-        return {"train_loss": train_loss}
+        # FOR WHEN INFERENCE IS NOT DYNAMIC
+        return {"train_loss": train_loss} # return the training loss for each epoch
+       
+       # FOR LATER WHEN INFERENCE IS DYNAMIC
+       # return {"train_loss": train_loss, "state_dict": self.model.state_dict(), "vocab_size": self.dataset.vocab_size, "sequence_length": self.dataset.sequence_length, "int_to_word": self.dataset.int_to_word}   
+       # returns the model state dict, vocab size, sequence_length, and int_to_word for inference
     
     
 class Train:
@@ -474,3 +479,38 @@ if __name__ == "__main__":
 
     # In your main function or after calling train_test_log
     plot_loss_graph(RESULTS["train_loss"], params["epoch"])
+
+
+class Inference:
+    def __init__(self, model, vocab_size, sequence_length, int_to_word):
+        self.model = model
+        self.vocab_size = vocab_size
+        self.sequence_length = sequence_length
+        self.int_to_word = int_to_word
+        self.device = (  # for GPU access --> works with CPU as well
+            "cuda"
+            if torch.cuda.is_available()
+            else "mps" if torch.backends.mps.is_available() else "cpu"
+        )
+        print(f"Using {self.device} device")
+
+
+    def generate_text(self, input_text, max_length=50):
+        # Preprocess the input text
+        input_seq = torch.LongTensor([self.dataset.word_to_int[word] for word in input_text.split()]).unsqueeze(0).to(self.device)
+        
+        generated_text = []
+        
+        for _ in range(max_length):
+            with torch.no_grad():
+                output = self.model(input_seq)
+                # Get the predicted word index
+                _, predicted_index = torch.max(output[:, -1, :], dim=1)
+                # Convert the index to a word
+                predicted_word = self.int_to_word[predicted_index.item()]
+                generated_text.append(predicted_word)
+                
+                # Update the input sequence with the predicted word
+                input_seq = torch.cat((input_seq, predicted_index.unsqueeze(0)), dim=1)
+                
+        return ' '.join(generated_text)
