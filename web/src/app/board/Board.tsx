@@ -31,6 +31,7 @@ const Board = () => {
   }, []);
 
   const showNotification = (title: string, body: string) => {
+    if (!("Notification" in window)) return;
     if (permission === "granted") {
       console.log("first");
       new Notification(title, {

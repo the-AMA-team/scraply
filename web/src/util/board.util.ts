@@ -125,3 +125,19 @@ export const startTransformerTraining = async (config: TransformerConfig) => {
       return data;
     });
 };
+
+export const transformerTest = async (temperature: number, prompt: string) => {
+  return await fetch("http://127.0.0.1:5000/transformertest", {
+    method: "POST",
+    body: JSON.stringify({ temperature, prompt }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((res) => {
+      return res.json();
+    })
+    .then((data) => {
+      return data;
+    });
+};

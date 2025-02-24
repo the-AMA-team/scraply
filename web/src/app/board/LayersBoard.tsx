@@ -182,7 +182,7 @@ const LayersBoard = ({
         {/* Toolbox area */}
         <div className="mr-4">
           <div className="bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
-            Scraps
+            Blocks
           </div>
           <div className="rounded-xl bg-zinc-800 py-1">
             {LAYER_BLOCKS.map((block) => (

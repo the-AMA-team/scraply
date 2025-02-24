@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { startTransformerTraining } from "~/util/board.util";
+import { startTransformerTraining, transformerTest } from "~/util/board.util";
 import { ResponsiveLine } from "@nivo/line";
 
 interface Decoder {
@@ -82,7 +82,7 @@ const Decoder: React.FC<DecoderProps> = ({
 const TrainConfig: React.FC<{
   decoders: Decoder[];
   dropout: number;
-  }> = ({ decoders, dropout }) => {
+}> = ({ decoders, dropout }) => {
   const [loss, setLoss] = useState("BCE");
   const [optimizer, setOptimizer] = useState("Adam");
   const [learningRate, setLearningRate] = useState(0.001);
@@ -90,18 +90,22 @@ const TrainConfig: React.FC<{
   const [batchSize, setBatchSize] = useState(10);
 
   const [isTraining, setIsTraining] = useState(false);
-  const [results, setResults] = useState<{train_loss: number[]} | null>(null);
-  const [graphData, setGraphData] = useState<{
-    id: string;
-    data: { x: number; y: number }[];
-  }[] | null>([{ id: "train_loss", data: [{x: 4, y: 0}, {x: 2, y: 1}] }]);
+  const [results, setResults] = useState<{ train_loss: number[] } | null>(null);
+  const [graphData, setGraphData] = useState<
+    | {
+        id: string;
+        data: { x: number; y: number }[];
+      }[]
+    | null
+  >(null);
 
+  const [isTestLoading, setIsTestLoading] = useState(false);
   const [temperature, setTemperature] = useState(0.1);
   const [prompt, setPrompt] = useState("");
   const [generatedText, setGeneratedText] = useState("");
 
   return (
-    <div className="my-4 w-fit">
+    <div className="my-4 w-2/3">
       <div className="bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
         Train
       </div>
@@ -227,10 +231,12 @@ const TrainConfig: React.FC<{
                     setGraphData([
                       {
                         id: "train_loss",
-                        data: data.RESULTS.train_loss.map((loss: number, i: number) => ({
-                          x: i,
-                          y: loss,
-                        })),
+                        data: data.RESULTS.train_loss.map(
+                          (loss: number, i: number) => ({
+                            x: i,
+                            y: loss,
+                          }),
+                        ),
                       },
                     ]);
                   })
@@ -254,58 +260,58 @@ const TrainConfig: React.FC<{
             </button>
           </div>
           {graphData && (
-              <div className="h-72 w-72 mt-2 text-center bg-zinc-50 rounded-md">
-                <ResponsiveLine
-                  data={graphData}
-                  margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
-                  enableGridX={false}
-                  enableGridY={false}
-                  xScale={{ type: "point" }}
-                  yScale={{
-                    type: "linear",
-                    min: "auto",
-                    max: "auto",
-                    stacked: true,
-                    reverse: false,
-                  }}
-                  colors={{ scheme: "accent" }}
-                  axisTop={null}
-                  axisRight={null}
-                  axisBottom={null}
-                  axisLeft={{
-                    tickSize: 5,
-                    tickPadding: 5,
-                    tickRotation: 0,
-                    legend: "Loss",
-                    legendOffset: -40,
-                    legendPosition: "middle",
-                  }}
-                  pointSize={2}
-                  pointColor={{ theme: "background" }}
-                  pointBorderWidth={2}
-                  pointBorderColor={{ from: "serieColor" }}
-                  pointLabelYOffset={-12}
-                  useMesh={true}
-                  legends={[
-                    {
-                      anchor: "bottom-right",
-                      direction: "column",
-                      justify: false,
-                      translateX: 100,
-                      translateY: 0,
-                      itemsSpacing: 0,
-                      itemDirection: "left-to-right",
-                      itemWidth: 80,
-                      itemHeight: 20,
-                      itemOpacity: 0.75,
-                      symbolSize: 12,
-                      symbolShape: "circle",
-                      symbolBorderColor: "rgba(0, 0, 0, .5)",
-                    },
-                  ]}
-                />
-              </div>
-            )}
+            <div className="mt-2 h-72 w-72 rounded-md bg-zinc-50 text-center">
+              <ResponsiveLine
+                data={graphData}
+                margin={{ top: 50, right: 110, bottom: 50, left: 60 }}
+                enableGridX={false}
+                enableGridY={false}
+                xScale={{ type: "point" }}
+                yScale={{
+                  type: "linear",
+                  min: "auto",
+                  max: "auto",
+                  stacked: true,
+                  reverse: false,
+                }}
+                colors={{ scheme: "accent" }}
+                axisTop={null}
+                axisRight={null}
+                axisBottom={null}
+                axisLeft={{
+                  tickSize: 5,
+                  tickPadding: 5,
+                  tickRotation: 0,
+                  legend: "Loss",
+                  legendOffset: -40,
+                  legendPosition: "middle",
+                }}
+                pointSize={2}
+                pointColor={{ theme: "background" }}
+                pointBorderWidth={2}
+                pointBorderColor={{ from: "serieColor" }}
+                pointLabelYOffset={-12}
+                useMesh={true}
+                legends={[
+                  {
+                    anchor: "bottom-right",
+                    direction: "column",
+                    justify: false,
+                    translateX: 100,
+                    translateY: 0,
+                    itemsSpacing: 0,
+                    itemDirection: "left-to-right",
+                    itemWidth: 80,
+                    itemHeight: 20,
+                    itemOpacity: 0.75,
+                    symbolSize: 12,
+                    symbolShape: "circle",
+                    symbolBorderColor: "rgba(0, 0, 0, .5)",
+                  },
+                ]}
+              />
+            </div>
+          )}
         </div>
       </div>
       <div className="bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
@@ -354,13 +360,27 @@ const TrainConfig: React.FC<{
             </div>
           </div>
           <div className="m-2 flex justify-center">
-            <div className="flex rounded-2xl bg-blue-500 px-4 py-2 text-white">
-              <button
-                className={`text-lg ring-indigo-500 transition-all duration-300 ease-in-out hover:bg-indigo-600 hover:ring-2 active:bg-indigo-500`}
-              >
-                Predict
-              </button>
-            </div>
+            <button
+              disabled={isTestLoading}
+              className={`rounded-2xl bg-zinc-700 px-6 py-2 text-lg transition-all ease-in-out ${
+                !isTestLoading &&
+                "hover:bg-indigo-600 hover:px-8 hover:ring-2 active:bg-indigo-500 active:px-9"
+              } ring-indigo-500 duration-300 ${
+                isTestLoading && "animate-bounce px-9 ring-2 ring-zinc-600"
+              }`}
+              onClick={() => {
+                setIsTestLoading(true);
+                transformerTest(temperature, prompt)
+                  .then((data) => {
+                    setGeneratedText(data.text);
+                  })
+                  .finally(() => {
+                    setIsTestLoading(false);
+                  });
+              }}
+            >
+              Predict
+            </button>
           </div>
         </div>
       </div>
@@ -371,7 +391,6 @@ const TrainConfig: React.FC<{
 const TransformersBoard = () => {
   const [decoders, setDecoders] = useState<Decoder[]>([]);
   const [dropout, setDropout] = useState(0.01);
-
 
   const handleAppendDecoder = () => {
     setDecoders((prev) => [
@@ -467,10 +486,7 @@ const TransformersBoard = () => {
         </div>
       </div>
       <div className="w-1/3">
-        <TrainConfig
-          decoders={decoders}
-          dropout={dropout}
-        />
+        <TrainConfig decoders={decoders} dropout={dropout} />
       </div>
     </div>
   );
