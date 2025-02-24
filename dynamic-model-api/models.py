@@ -131,46 +131,6 @@ class TransformerModel(nn.Module):
         )
         return mask
 
-    def return_int_vector(text, TransformerData):
-        words = text.split()
-        input_seq = torch.LongTensor(
-            [TransformerData.word_to_int[word] for word in words]
-        ).unsqueeze(0)
-        return input_seq
-
-    def sample_next(predictions, temperature=1.0, top_k=None):
-        probabilities = F.softmax(predictions[:, -1, :] / temperature, dim=-1).cpu()
-
-        if top_k is not None:
-            # Select top-k probabilities
-            top_values, top_indices = torch.topk(probabilities, top_k)
-            probabilities = top_values / torch.sum(top_values)  # Re-normalize
-            next_token = torch.multinomial(probabilities, 1).item()
-            next_token = top_indices[next_token].item()  # Convert to actual token index
-        else:
-            # Sample from full distribution
-            next_token = torch.multinomial(probabilities, 1).item()
-
-        return next_token
-
-    def text_generator(
-        self, TransformerData, sentence, generate_length, temperature=1.0, top_k=None
-    ):
-        self.eval()
-        sample = sentence
-        for i in range(generate_length):
-            int_vector = self.return_int_vector(sample, TransformerData)
-            if len(int_vector) >= TransformerData.sequence_length - 1:
-                break
-            input_tensor = int_vector
-            with torch.no_grad():
-                predictions = self(input_tensor)
-            next_token = self.sample_next(predictions, temperature, top_k)
-            sample += " " + TransformerData.int_to_word[next_token]
-        print(sample)
-        print("\n")
-        return sample
-
 
 # if type = 'transformer' then run using this function:
 # class TransformerModel(nn.Module):
@@ -503,22 +463,60 @@ class Train:
         # can add more information to this dictionary, like the saved model, best epochs, etc.
 
 
+class TextGenerator:
+    def __init__(self, model, word_to_int, int_to_word, sequence_length):
+        self.model = model
+        self.word_to_int = word_to_int
+        self.int_to_word = int_to_word
+        self.sequence_length = sequence_length
+
+    def return_int_vector(self, text):
+        words = text.split()
+        input_seq = torch.LongTensor(
+            [self.word_to_int[word] for word in words[-self.sequence_length :]]
+        ).unsqueeze(0)
+        return input_seq
+
+    def sample_next(self, predictions, temperature=1.0, top_k=None):
+        """
+        Sample the next token using temperature and top-k sampling.
+
+        :param predictions: Model logits for the next word.
+        :param temperature: Controls randomness (higher = more random).
+        :param top_k: If set, restricts sampling to top-k most likely words.
+        """
+        probabilities = F.softmax(predictions[:, -1, :] / temperature, dim=-1).cpu()
+
+        if top_k is not None:
+            top_values, top_indices = torch.topk(probabilities, top_k)
+            probabilities = top_values / torch.sum(top_values)  # Re-normalize
+            next_token = torch.multinomial(probabilities, 1).item()
+            next_token = top_indices[next_token].item()
+        else:
+            next_token = torch.multinomial(probabilities, 1).item()
+
+        return next_token
+
+    def generate_text(self, sentence, generate_length, temperature=1.0, top_k=None):
+        self.model.eval()
+        sample = sentence
+        for _ in range(generate_length):
+            int_vector = self.return_int_vector(sample)
+            if len(int_vector) >= self.sequence_length - 1:
+                break
+            with torch.no_grad():
+                predictions = self.model(int_vector)
+            next_token = self.sample_next(predictions, temperature, top_k)
+            sample += " " + self.int_to_word[next_token]
+        # print(sample)
+        # print('\n')
+        return sample  # return the generated text
+
+
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    print("hello")
-
-    def plot_loss_graph(train_losses, n_epochs):
-        plt.figure(figsize=(10, 6))
-        plt.plot(
-            range(1, n_epochs + 1), train_losses, label="Training Loss", color="blue"
-        )
-        plt.title("Training Loss over Epochs")
-        plt.xlabel("Epochs")
-        plt.ylabel("Loss")
-        plt.legend()
-        plt.grid(True)
-        plt.show()
+    temperature = 0.1
+    prompt = "Alice was sleepy"
+    generate_length = 100  # this should be an actual argument in the future
 
     # example arguments
     embed_dim = 100
@@ -539,69 +537,28 @@ if __name__ == "__main__":
         "batch_size": 32,
     }
 
-    print(params["input"])
+
     dataset = TransformerData(params["input"])
 
     model = TransformerModel(
         params["layers"], dataset.vocab_size, dataset.sequence_length
     )  # model is moved to device in train function
 
-    print(model)
 
-    t = TransformerTrain(
-        model=model,
-        inp=params["input"],
-        loss=params["loss"],
-        optimizer=params["optimizer"],
-        batch_size=params["batch_size"],
+    model.load_state_dict(
+        torch.load("datasets/model2.pth", weights_only=True,
+                map_location=torch.device("cpu"))
+    )  # load model weights
+    print("Model loaded successfully!")
+
+    word_to_int = dataset.word_to_int 
+    int_to_word = dataset.int_to_word 
+    SEQUENCE_LENGTH = (
+        dataset.sequence_length
+    )  
+
+    text_gen = TextGenerator(model, word_to_int, int_to_word, SEQUENCE_LENGTH)
+    sample = text_gen.generate_text(
+        prompt, generate_length, temperature=temperature, top_k=None
     )
-
-    RESULTS = t.train(params["epoch"])
-
-    print("Results:")
-    print("Training Loss: ", RESULTS["train_loss"])
-
-    # In your main function or after calling train_test_log
-    plot_loss_graph(RESULTS["train_loss"], params["epoch"])
-
-
-class Inference:
-    def __init__(self, model, vocab_size, sequence_length, int_to_word):
-        self.model = model
-        self.vocab_size = vocab_size
-        self.sequence_length = sequence_length
-        self.int_to_word = int_to_word
-        self.device = (  # for GPU access --> works with CPU as well
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps"
-            if torch.backends.mps.is_available()
-            else "cpu"
-        )
-        print(f"Using {self.device} device")
-
-    def generate_text(self, input_text, max_length=50):
-        # Preprocess the input text
-        input_seq = (
-            torch.LongTensor(
-                [self.dataset.word_to_int[word] for word in input_text.split()]
-            )
-            .unsqueeze(0)
-            .to(self.device)
-        )
-
-        generated_text = []
-
-        for _ in range(max_length):
-            with torch.no_grad():
-                output = self.model(input_seq)
-                # Get the predicted word index
-                _, predicted_index = torch.max(output[:, -1, :], dim=1)
-                # Convert the index to a word
-                predicted_word = self.int_to_word[predicted_index.item()]
-                generated_text.append(predicted_word)
-
-                # Update the input sequence with the predicted word
-                input_seq = torch.cat((input_seq, predicted_index.unsqueeze(0)), dim=1)
-
-        return " ".join(generated_text)
+    print(sample)

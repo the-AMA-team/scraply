@@ -5,6 +5,7 @@ from models import (
     TransformerModel,
     TransformerData,
     TransformerTrain,
+    TextGenerator,
 )
 from flask_cors import CORS
 from generate import Generate
@@ -157,7 +158,9 @@ def transformertrain():
 
 @app.post("/transformertest")
 def transformertest():
-    print("HELLLLLLLLLLOOOOOOOOOOO")
+    infer_data = request.get_json()
+    print("Received data:", infer_data)
+
     # PRE DEFINED MODEL FOR DEMO PURPOSES
     # example arguments
     embed_dim = 100
@@ -179,15 +182,6 @@ def transformertest():
 
     inp = data["input"]
     layers = data["layers"]
-    loss = data["loss"]
-    optimizer = data["optimizer"]
-    n_epochs = data["epoch"]
-    batch_size = data["batch_size"]
-    
-
-
-    infer_data = request.get_json()
-    print("Received data:", infer_data)
 
     temperature = infer_data["temperature"]
     prompt = infer_data["prompt"]
@@ -197,31 +191,29 @@ def transformertest():
     # hardcode example decoder model for now
 
     try:
-        # initialize model here (using user architecture)
-        # move model to device
-        # model.load using state_dict
-
-        # inference time!
-        # use vocab_size, sequence_length, and int_to_word from data --> from request data
-        # use temperature and prompt
-        # generate text using model.generate_text()
-        # return generated text
-
-        # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        dataset = TransformerData(inp)
+        dataset = TransformerData(data["input"])
 
         model = TransformerModel(
-            layers, dataset.vocab_size, dataset.sequence_length
-        )  # model is moved to device in train function
+            data["layers"], dataset.vocab_size, dataset.sequence_length
+        )
 
-        model.load_state_dict(torch.load("datasets/model.pth"))  # load model weights
-        sample = model.text_generator(
-            dataset, prompt, generate_length, temperature=temperature, top_k=None
-        )  # generate text
-        print("Generated text:", sample)
+        model.load_state_dict(
+            torch.load(
+                "datasets/model2.pth",
+                weights_only=True,
+                map_location=torch.device("cpu"), # honestly should not NEED this argument but idk. 
+            )
+        )  # load model weights
+        print("Model loaded successfully!")
 
-        print("OH YEAHHAHAH IT WORKEDDDD AaAAAAaaAAA!")
+        word_to_int = dataset.word_to_int
+        int_to_word = dataset.int_to_word
+        SEQUENCE_LENGTH = dataset.sequence_length
+
+        text_gen = TextGenerator(model, word_to_int, int_to_word, SEQUENCE_LENGTH)
+        sample = text_gen.generate_text(
+            prompt, generate_length, temperature=temperature, top_k=None
+        )
 
         RESULTS = {"text": sample}
 
