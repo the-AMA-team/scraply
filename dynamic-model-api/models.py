@@ -227,6 +227,7 @@ class TransformerData(Dataset):
         return VOCAB_SIZE, SEQUENCE_LENGTH, WORD_TO_INT, INT_TO_WORD, SAMPLES
 
 
+# MOVES MODEL TO DEVICE
 class TransformerTrain:  # input is DATALOADERS
     def __init__(self, model, inp, loss, optimizer, batch_size):
         self.dataset = TransformerData(inp)

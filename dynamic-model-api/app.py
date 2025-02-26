@@ -195,22 +195,26 @@ def transformertest():
 
     try:
         dataset = TransformerData(data["input"])
+        
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()  # clear GPU memory
 
         model = TransformerModel(
             data["layers"], dataset.vocab_size, dataset.sequence_length
         )
 
-        model.load_state_dict(
-            torch.load("datasets/model2.pth", weights_only=True)
-        )  # may need argument --> map_location=torch.device("cpu")
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        model.load_state_dict(torch.load("datasets/model2.pth", weights_only=True, map_location=device))
+        
+
         print("Model loaded successfully!")
 
         word_to_int = dataset.word_to_int
         int_to_word = dataset.int_to_word
         SEQUENCE_LENGTH = dataset.sequence_length
-
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()  # clear GPU memory
+        
+        model.to(device) # move model to device
 
         text_gen = Inference(model, word_to_int, int_to_word, SEQUENCE_LENGTH)
         sample = text_gen.generate_text(
