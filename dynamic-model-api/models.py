@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from sklearn.model_selection import train_test_split  # --> pip install scikit-learn
 import math
 from collections import Counter
-
+import time
 from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 
 # data loader + suggestions
@@ -200,6 +200,8 @@ class TransformerData(Dataset):
             file_path = "datasets/alice_1.txt"
         if inp == "shakespeare":
             file_path = "datasets/shakespeare.txt"
+        if inp == "mehek":
+            file_path = "datasets/mehek.txt"
 
         with open(file_path, "r", encoding="utf-8") as file:
             text = file.read()
@@ -463,7 +465,7 @@ class Train:
         # can add more information to this dictionary, like the saved model, best epochs, etc.
 
 
-class TextGenerator:
+class Inference:
     def __init__(self, model, word_to_int, int_to_word, sequence_length):
         self.model = model
         self.word_to_int = word_to_int
@@ -504,29 +506,49 @@ class TextGenerator:
             int_vector = self.return_int_vector(sample)
             if len(int_vector) >= self.sequence_length - 1:
                 break
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            input_tensor = int_vector.to(device)
             with torch.no_grad():
-                predictions = self.model(int_vector)
+                predictions = self.model(input_tensor)
             next_token = self.sample_next(predictions, temperature, top_k)
             sample += " " + self.int_to_word[next_token]
         # print(sample)
         # print('\n')
         return sample  # return the generated text
 
+    # def text_generator(sentence, generate_length, temperature=1.0, top_k=None):
+    # model.eval()
+    # sample = sentence
+    # for i in range(generate_length):
+    #     int_vector = return_int_vector(sample)
+    #     if len(int_vector) >= SEQUENCE_LENGTH - 1:
+    #         break
+    #     input_tensor = int_vector.to(device)
+    #     with torch.no_grad():
+    #         predictions = model(input_tensor)
+    #     next_token = sample_next(predictions, temperature, top_k)
+    #     sample += ' ' + int_to_word[next_token]
+    # print(sample)
+    # print('\n')
 
+
+# --------------------------- testing transformer training (and inference i guess) (for shakespeare) ----------------------------
 if __name__ == "__main__":
-    temperature = 0.1
-    prompt = "Alice was sleepy"
+    temperature = 0.5
+    prompt = "Alice was sad"
     generate_length = 100  # this should be an actual argument in the future
 
     # example arguments
     embed_dim = 100
-    heads = 2
+    heads = 4
     hidden_dim = 2048
     # example data
     params = {
         "type": "transformer",  # ADDED NEW PARAMETER
         "input": "alice",  # preprocess
         "layers": [
+            {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+            {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
             {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
             {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
             {"kind": "Output", "args": 0.3},
@@ -537,6 +559,9 @@ if __name__ == "__main__":
         "batch_size": 32,
     }
 
+    print("hello whats up shawty")
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()  # clear GPU memory
 
     dataset = TransformerData(params["input"])
 
@@ -544,21 +569,84 @@ if __name__ == "__main__":
         params["layers"], dataset.vocab_size, dataset.sequence_length
     )  # model is moved to device in train function
 
+    start = time.time()
 
-    model.load_state_dict(
-        torch.load("datasets/model2.pth", weights_only=True,
-                map_location=torch.device("cpu"))
-    )  # load model weights
+    t = TransformerTrain(
+        model,
+        params["input"],
+        params["loss"],
+        params["optimizer"],
+        params["batch_size"],
+    )
+
+    losses = t.train(params["epoch"])
+    end = time.time()
+    print(f"Time taken to train model: {end - start} seconds")
+
+    print(losses)
+
     print("Model loaded successfully!")
+    torch.save(model.state_dict(), "datasets/model3.pth")
+    print("Model saved successfully!")
 
-    word_to_int = dataset.word_to_int 
-    int_to_word = dataset.int_to_word 
-    SEQUENCE_LENGTH = (
-        dataset.sequence_length
-    )  
+    word_to_int = dataset.word_to_int
+    int_to_word = dataset.int_to_word
+    SEQUENCE_LENGTH = dataset.sequence_length
 
-    text_gen = TextGenerator(model, word_to_int, int_to_word, SEQUENCE_LENGTH)
+    text_gen = Inference(model, word_to_int, int_to_word, SEQUENCE_LENGTH)
     sample = text_gen.generate_text(
         prompt, generate_length, temperature=temperature, top_k=None
     )
     print(sample)
+
+
+# --------------------------- testing transformer inference (for alice inference) ----------------------------
+# if __name__ == "__main__":
+#     temperature = 0.1
+#     prompt = "Alice was sleepy"
+#     generate_length = 100  # this should be an actual argument in the future
+
+#     # example arguments
+#     embed_dim = 100
+#     heads = 2
+#     hidden_dim = 2048
+#     # example data
+#     params = {
+#         "type": "transformer",  # ADDED NEW PARAMETER
+#         "input": "alice",  # preprocess
+#         "layers": [
+#             {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+#             {"kind": "Decoder", "args": (embed_dim, heads, hidden_dim)},
+#             {"kind": "Output", "args": 0.3},
+#         ],
+#         "loss": "CrossEntropy",
+#         "optimizer": {"kind": "Adam", "lr": 0.001},
+#         "epoch": 10,
+#         "batch_size": 32,
+#     }
+
+
+#     dataset = TransformerData(params["input"])
+
+#     model = TransformerModel(
+#         params["layers"], dataset.vocab_size, dataset.sequence_length
+#     )  # model is moved to device in train function
+
+
+#     model.load_state_dict(
+#         torch.load("datasets/model2.pth", weights_only=True,
+#                 map_location=torch.device("cpu"))
+#     )  # load model weights
+#     print("Model loaded successfully!")
+
+#     word_to_int = dataset.word_to_int
+#     int_to_word = dataset.int_to_word
+#     SEQUENCE_LENGTH = (
+#         dataset.sequence_length
+#     )
+
+#     text_gen = TextGenerator(model, word_to_int, int_to_word, SEQUENCE_LENGTH)
+#     sample = text_gen.generate_text(
+#         prompt, generate_length, temperature=temperature, top_k=None
+#     )
+#     print(sample)

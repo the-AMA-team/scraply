@@ -5,7 +5,7 @@ from models import (
     TransformerModel,
     TransformerData,
     TransformerTrain,
-    TextGenerator,
+    Inference,
 )
 from flask_cors import CORS
 from generate import Generate
@@ -99,7 +99,7 @@ def train():
     }  # training loss
 
 
-@app.post("/transformertrain")
+@app.post("/transformertrain")  # MODEL IS MOVED TO DEVICE INSIDE OF TRAIN FUNCTION
 def transformertrain():
     # # example arguments
     # embed_dim = 100
@@ -130,6 +130,9 @@ def transformertrain():
     batch_size = data["batch_size"]
 
     try:
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()  # clear GPU memory
+
         dataset = TransformerData(inp)
         model = TransformerModel(
             layers, dataset.vocab_size, dataset.sequence_length
@@ -156,7 +159,7 @@ def transformertrain():
     }
 
 
-@app.post("/transformertest")
+@app.post("/transformertest")  # MODEL IS MOVED TO DEVICE INSIDE OF INFERENCE FUNCTION
 def transformertest():
     infer_data = request.get_json()
     print("Received data:", infer_data)
@@ -198,19 +201,18 @@ def transformertest():
         )
 
         model.load_state_dict(
-            torch.load(
-                "datasets/model2.pth",
-                weights_only=True,
-                map_location=torch.device("cpu"), # honestly should not NEED this argument but idk. 
-            )
-        )  # load model weights
+            torch.load("datasets/model2.pth", weights_only=True)
+        )  # may need argument --> map_location=torch.device("cpu")
         print("Model loaded successfully!")
 
         word_to_int = dataset.word_to_int
         int_to_word = dataset.int_to_word
         SEQUENCE_LENGTH = dataset.sequence_length
 
-        text_gen = TextGenerator(model, word_to_int, int_to_word, SEQUENCE_LENGTH)
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()  # clear GPU memory
+
+        text_gen = Inference(model, word_to_int, int_to_word, SEQUENCE_LENGTH)
         sample = text_gen.generate_text(
             prompt, generate_length, temperature=temperature, top_k=None
         )
