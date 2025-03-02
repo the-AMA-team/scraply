@@ -170,11 +170,10 @@ const LayersBoard = ({
                   });
               }}
             >
-              {isLoadingSuggestions ? (
-                <img src="dino-running.gif" className="w-14" />
-              ) : (
-                "✨"
-              )}
+              {isLoadingSuggestions
+                ? // <img src="dino-running.gif" className="w-14" />
+                  "..."
+                : "✨"}
             </button>
           </div>
         </div>
@@ -320,8 +319,8 @@ const LayersBoard = ({
                 >
                   {isTraining ? (
                     <div className="flex items-center">
-                      <div>Training</div>{" "}
-                      <img src="dino-running.gif" className="w-14" />
+                      <div>Training...</div>{" "}
+                      {/* <img src="dino-running.gif" className="w-14" /> */}
                     </div>
                   ) : (
                     "Train"

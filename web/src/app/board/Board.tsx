@@ -21,7 +21,7 @@ const Board = () => {
 
   const isLoadingSuggestionsState = useState(false);
 
-  const [permission, setPermission] = useState(Notification.permission);
+  const [permission, setPermission] = useState("denied");
 
   useEffect(() => {
     if ("Notification" in window) {
@@ -33,10 +33,9 @@ const Board = () => {
   const showNotification = (title: string, body: string) => {
     if (!("Notification" in window)) return;
     if (permission === "granted") {
-      console.log("first");
       new Notification(title, {
         body,
-        icon: "favicon.png",
+        // icon: "favicon.png",
       });
     }
   };

@@ -251,8 +251,8 @@ const TrainConfig: React.FC<{
             >
               {isTraining ? (
                 <div className="flex items-center">
-                  <div>Training</div>{" "}
-                  <img src="dino-running.gif" className="w-14" />
+                  <div>Training...</div>{" "}
+                  {/* <img src="dino-running.gif" className="w-14" /> */}
                 </div>
               ) : (
                 "Train"

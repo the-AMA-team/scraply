@@ -11,9 +11,9 @@ import {
 } from "@clerk/nextjs";
 
 export const metadata: Metadata = {
-  title: "rawr.",
-  description: "Turn the Deep Learning RAWR into just rawr.",
-  icons: [{ rel: "icon", url: "/favicon.png" }],
+  title: "scraply",
+  description: "",
+  // icons: [{ rel: "icon", url: "/favicon.png" }],
 };
 
 export default function RootLayout({
@@ -26,8 +26,8 @@ export default function RootLayout({
           <SignedOut>
             <div className="flex justify-between bg-zinc-800 text-white">
               <div className="flex">
-                <img src="favicon.png" className="mx-4 w-12" alt="" />
-                <div className="py-4 pr-7">rawr</div>
+                {/* <img src="favicon.png" className="mx-4 w-12" alt="" /> */}
+                <div className="mx-4 py-4 pr-7">scraply</div>
               </div>
               <SignInButton>
                 <button className="mx-2 my-2 rounded-lg bg-blue-600 px-6 py-2">
@@ -39,8 +39,8 @@ export default function RootLayout({
           <SignedIn>
             <div className="flex justify-between bg-zinc-800 text-white">
               <div className="flex">
-                <img src="favicon.png" className="mx-4 w-12" alt="" />
-                <div className="py-4 pr-7">rawr</div>
+                {/* <img src="favicon.png" className="mx-4 w-12" alt="" /> */}
+                <div className="mx-4 py-4 pr-7">scraply</div>
               </div>
               <div className="my-auto px-2">
                 <UserButton />
