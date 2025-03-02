@@ -59,7 +59,7 @@ const Board = () => {
       <div>
         <div className="flex justify-between p-4">
           <div className="mx-4 flex items-center">
-            <div className="mx-2 text-lg font-bold">Dataset</div>
+            <div className="mx-2 text-lg">Dataset</div>
             <select
               className="rounded bg-zinc-800 p-2 text-white outline-none"
               onChange={(e) => setSelectedDataset(e.target.value)}
@@ -88,7 +88,7 @@ const Board = () => {
             }
           />
           <div className="invisible mx-4 flex items-center">
-            <div className="mx-2 text-xl font-bold">Dataset</div>
+            <div className="mx-2 text-xl">Dataset</div>
             <select
               className="rounded bg-zinc-800 p-2 text-white outline-none"
               onChange={(e) => console.log(e.target.value)}
