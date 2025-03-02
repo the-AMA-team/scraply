@@ -1,12 +1,24 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import LayersBoard from "./LayersBoard";
-import { AppMode } from "~/types";
+import { AppMode, Dataset } from "~/types";
 import Toggle from "../_components/Toggle";
 import TransformersBoard from "./TransformersBoard";
+import DATASETS from "~/util/DATASETS";
 
 const Board = () => {
   const [mode, setMode] = useState<AppMode>(AppMode.LAYERS);
+  const [datasetOptions, setDatasetOptions] = useState<Dataset[]>(
+    DATASETS[mode],
+  );
+  const [selectedDataset, setSelectedDataset] = useState<string>(
+    datasetOptions[0]!.inputName,
+  );
+
+  useEffect(() => {
+    setDatasetOptions(DATASETS[mode]);
+    setSelectedDataset(DATASETS[mode][0]!.inputName);
+  }, [mode]);
 
   // global layer state
   const lossState = useState("BCE");
@@ -42,10 +54,30 @@ const Board = () => {
 
   return (
     <div
-      className={`${mode === AppMode.TRANSFORMERS ? "h-full min-h-screen" : "h-screen overflow-hidden"} bg-zinc-900 text-white`}
+      className={`${mode === AppMode.TRANSFORMERS ? "" : "overflow-hidden"} bg-zinc-900 text-white`}
     >
       <div>
-        <div className="flex justify-center p-4">
+        <div className="flex justify-between p-4">
+          <div className="mx-4 flex items-center">
+            <div className="mx-2 text-lg font-bold">Dataset</div>
+            <select
+              className="rounded bg-zinc-800 p-2 text-white outline-none"
+              onChange={(e) => setSelectedDataset(e.target.value)}
+              value={selectedDataset}
+            >
+              {datasetOptions.map((dataset, idx) => {
+                return (
+                  <option
+                    key={idx}
+                    value={dataset.inputName}
+                    className="text-wrap"
+                  >
+                    {dataset.label}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
           <Toggle
             color="blue"
             option2="TRANSFORMERS"
@@ -55,11 +87,28 @@ const Board = () => {
               setMode as React.Dispatch<React.SetStateAction<string>>
             }
           />
+          <div className="invisible mx-4 flex items-center">
+            <div className="mx-2 text-xl font-bold">Dataset</div>
+            <select
+              className="rounded bg-zinc-800 p-2 text-white outline-none"
+              onChange={(e) => console.log(e.target.value)}
+              value={selectedDataset}
+            >
+              {datasetOptions.map((dataset, idx) => {
+                return (
+                  <option key={idx} value={dataset.inputName}>
+                    {dataset.label}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
         </div>
         {mode === AppMode.TRANSFORMERS ? (
-          <TransformersBoard />
+          <TransformersBoard selectedDataset={selectedDataset} />
         ) : (
           <LayersBoard
+            selectedDataset={selectedDataset}
             lossState={lossState}
             optimizerState={optimizerState}
             learningRateState={learningRateState}

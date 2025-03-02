@@ -82,7 +82,8 @@ const Decoder: React.FC<DecoderProps> = ({
 const TrainConfig: React.FC<{
   decoders: Decoder[];
   dropout: number;
-}> = ({ decoders, dropout }) => {
+  selectedDataset: string;
+}> = ({ decoders, dropout, selectedDataset }) => {
   const [loss, setLoss] = useState("BCE");
   const [optimizer, setOptimizer] = useState("Adam");
   const [learningRate, setLearningRate] = useState(0.001);
@@ -222,7 +223,7 @@ const TrainConfig: React.FC<{
                   },
                   epoch: epochs,
                   batch_size: batchSize,
-                  input: "alice",
+                  input: selectedDataset,
                   layers: l,
                 })
                   .then((data: any) => {
@@ -388,7 +389,11 @@ const TrainConfig: React.FC<{
   );
 };
 
-const TransformersBoard = () => {
+interface TransformersProps {
+  selectedDataset: string;
+}
+
+const TransformersBoard = ({ selectedDataset }: TransformersProps) => {
   const [decoders, setDecoders] = useState<Decoder[]>([]);
   const [dropout, setDropout] = useState(0.01);
 
@@ -486,7 +491,11 @@ const TransformersBoard = () => {
         </div>
       </div>
       <div className="w-1/3">
-        <TrainConfig decoders={decoders} dropout={dropout} />
+        <TrainConfig
+          decoders={decoders}
+          dropout={dropout}
+          selectedDataset={selectedDataset}
+        />
       </div>
     </div>
   );

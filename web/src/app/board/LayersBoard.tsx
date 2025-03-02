@@ -20,6 +20,7 @@ import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
 
 interface LayersProps {
+  selectedDataset: string;
   lossState: [string, React.Dispatch<React.SetStateAction<string>>];
   optimizerState: [string, React.Dispatch<React.SetStateAction<string>>];
   learningRateState: [number, React.Dispatch<React.SetStateAction<number>>];
@@ -39,6 +40,7 @@ interface LayersProps {
 }
 
 const LayersBoard = ({
+  selectedDataset,
   lossState,
   optimizerState,
   learningRateState,
@@ -151,7 +153,7 @@ const LayersBoard = ({
               disabled={isLoadingSuggestions}
               onClick={() => {
                 setIsLoadingSuggestions(true);
-                getArchitectureSuggestion("pima")
+                getArchitectureSuggestion(selectedDataset)
                   .then((data) => {
                     const layers = data.map((l) => {
                       return {
@@ -292,7 +294,7 @@ const LayersBoard = ({
 
                     startTraining(
                       getConfig(
-                        "pima",
+                        selectedDataset,
                         canvasBlocks,
                         loss,
                         optimizer,

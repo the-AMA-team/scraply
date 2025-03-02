@@ -1,3 +1,8 @@
+export type Dataset = {
+  label: string;
+  inputName: string;
+};
+
 export interface UILayer {
   id: string;
   label: string;
