@@ -6,7 +6,7 @@ import {
   closestCenter,
   DragOverlay,
 } from "@dnd-kit/core";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useBoardStore } from "~/state/boardStore";
 import {
   startTraining,
@@ -18,21 +18,54 @@ import { LAYER_BLOCKS } from "../../util/LAYER_BLOCKS";
 import DraggableBlock from "./DraggableBlock";
 import DroppableCanvas from "./DroppableCanvas";
 import OverlayBlock from "./OverlayBlock";
+import DemoCard from "../_components/DemoCard";
+import { useDemo } from "~/state/DemoContext";
+import ToggleBlock from "../_components/ToggleBlock";
+import { CgSpinnerTwoAlt as SpinnerIcon } from "react-icons/cg";
+
+const DEMO_CARDS = [
+  {
+    title: "Canvas Area",
+    description: `Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model.`,
+    x: 0,
+    y: 0,
+    section: "canvas",
+  },
+  {
+    title: "Scraps Area",
+    description: `Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model.`,
+    x: 0,
+    y: 0,
+    section: "scraps",
+  },
+  {
+    title: "Training Area",
+    description: `Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model. Drag and drop layers ("scraps") here to build your model.`,
+    x: 0,
+    y: 0,
+    section: "training",
+  },
+];
 
 interface LayersProps {
   selectedDataset: string;
+  trainingBlockToggleState: [
+    boolean,
+    React.Dispatch<React.SetStateAction<boolean>>,
+  ];
   lossState: [string, React.Dispatch<React.SetStateAction<string>>];
   optimizerState: [string, React.Dispatch<React.SetStateAction<string>>];
   learningRateState: [number, React.Dispatch<React.SetStateAction<number>>];
   epochState: [number, React.Dispatch<React.SetStateAction<number>>];
   batchSizeState: [number, React.Dispatch<React.SetStateAction<number>>];
   isTrainingState: [boolean, React.Dispatch<React.SetStateAction<boolean>>];
-  trainingResState: [
-    any | null,
-    React.Dispatch<React.SetStateAction<any | null>>,
-  ];
+  trainingResHistoryState: [any[], React.Dispatch<React.SetStateAction<any[]>>];
   progressState: [number, React.Dispatch<React.SetStateAction<number>>];
   isLoadingSuggestionsState: [
+    boolean,
+    React.Dispatch<React.SetStateAction<boolean>>,
+  ];
+  resultsBlockToggleState: [
     boolean,
     React.Dispatch<React.SetStateAction<boolean>>,
   ];
@@ -41,31 +74,62 @@ interface LayersProps {
 
 const LayersBoard = ({
   selectedDataset,
+  trainingBlockToggleState,
   lossState,
   optimizerState,
   learningRateState,
   epochState,
   batchSizeState,
   isTrainingState,
-  trainingResState,
+  trainingResHistoryState,
   progressState,
   isLoadingSuggestionsState,
+  resultsBlockToggleState,
   showNotification,
 }: LayersProps) => {
+  const boardRef = useRef<HTMLDivElement>(null);
+  const canvasSectionRef = useRef<HTMLDivElement>(null);
+  const scrapsSectionRef = useRef<HTMLDivElement>(null);
+  const trainingSectionRef = useRef<HTMLDivElement>(null);
+
+  const SectionRefs = {
+    canvas: canvasSectionRef,
+    scraps: scrapsSectionRef,
+    training: trainingSectionRef,
+  };
+
+  const { isDemoing, setIsDemoing } = useDemo();
+  const [demoIdx, setDemoIdx] = useState(0);
+
+  useEffect(() => {
+    if (isDemoing) {
+      Array.from(boardRef.current?.children).forEach((child) => {
+        child.classList.add("opacity-20");
+      });
+      SectionRefs[DEMO_CARDS[demoIdx]?.section!].current?.classList.remove(
+        "opacity-20",
+      );
+    }
+  }, [isDemoing, demoIdx]);
+
   const { canvasBlocks, setCanvasBlocks, activeBlock, drag } = useBoardStore();
+
+  const [isTrainingBlockOpen, setIsTrainingBlockOpen] =
+    trainingBlockToggleState;
+
   const [loss, setLoss] = lossState;
   const [optimizer, setOptimizer] = optimizerState;
   const [learningRate, setLearningRate] = learningRateState;
   const [epochs, setEpochs] = epochState;
   const [batchSize, setBatchSize] = batchSizeState;
   const [isTraining, setIsTraining] = isTrainingState;
-  const [trainingRes, setTrainingRes] = trainingResState;
+  const [trainingResHistory, setTrainingResHistory] = trainingResHistoryState;
   const [progress, setProgress] = progressState;
 
   const [isLoadingSuggestions, setIsLoadingSuggestions] =
     isLoadingSuggestionsState;
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isResultsBlockOpen, setIsResultsBlockOpen] = resultsBlockToggleState;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -86,65 +150,22 @@ const LayersBoard = ({
       onDragEnd={drag.end}
       sensors={sensors}
     >
-      <div
-        className={`absolute left-1/2 top-1/2 z-20 h-1/2 w-1/2 -translate-x-1/2 -translate-y-1/2 transform rounded-2xl bg-zinc-800 shadow-xl ${
-          !isModalOpen && "hidden"
-        }`}
-      >
-        <div className="my-4 flex justify-center">
-          <div className="w-80 rounded-full">
-            <div className="relative flex flex-col items-center">
-              <svg className="relative h-52 w-52" viewBox="0 0 36 36">
-                <circle
-                  className="text-zinc-700"
-                  strokeWidth="3"
-                  stroke="currentColor"
-                  fill="transparent"
-                  r={circleRadius}
-                  cx="18"
-                  cy="18"
-                />
-                <circle
-                  className="text-green-500"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeDasharray={dashArray}
-                  stroke="currentColor"
-                  fill="transparent"
-                  r={circleRadius}
-                  cx="18"
-                  cy="18"
-                  style={{ transition: "stroke-dasharray 0.3s ease" }}
-                />
-              </svg>
-
-              <img
-                src="/stars.png"
-                alt="centered-icon"
-                className="absolute left-1/2 top-1/2 w-60 -translate-x-1/2 -translate-y-1/2 transform rounded-full"
+      <div className={`mx-20 mt-10 flex`} ref={boardRef}>
+        {/* Toolbox area */}
+        <div className="mr-4" ref={scrapsSectionRef}>
+          <div className="rounded-xl bg-zinc-800 py-1">
+            {LAYER_BLOCKS.map((block) => (
+              <DraggableBlock
+                key={block.id}
+                id={block.id}
+                label={block.label}
+                color={block.color}
               />
-
-              <div className="mt-2 text-center text-lg font-semibold text-green-500">
-                {Math.round(progress)}% Accuracy Achieved!
-              </div>
-            </div>
+            ))}
           </div>
         </div>
-        <div className="mt-4 flex justify-center">
-          <button
-            onClick={() => {
-              setIsModalOpen(false);
-            }}
-            className="rounded bg-zinc-700 px-4 py-2 text-white"
-          >
-            YAY!
-          </button>
-        </div>
-      </div>
-      <div className={`mx-20 mt-10 flex ${isModalOpen && "opacity-50"}`}>
         {/* Canvas area */}
-        <div className="mr-10 flex-grow">
-          <div className="bg-zinc-900 p-2 text-2xl text-zinc-500">Canvas</div>
+        <div className="mr-10 flex-grow" ref={canvasSectionRef}>
           <div className="relative">
             <DroppableCanvas />
             <button
@@ -180,179 +201,285 @@ const LayersBoard = ({
           </div>
         </div>
 
-        {/* Toolbox area */}
-        <div className="mr-4">
-          <div className="bg-zinc-900 p-2 text-center text-2xl text-zinc-500">
-            Blocks
-          </div>
-          <div className="rounded-xl bg-zinc-800 py-1">
-            {LAYER_BLOCKS.map((block) => (
-              <DraggableBlock
-                key={block.id}
-                id={block.id}
-                label={block.label}
-                color={block.color}
-              />
-            ))}
-          </div>
-        </div>
-
         {/* Training config */}
-        <div className="">
-          <div className="bg-zinc-900 p-2 text-2xl text-zinc-500">Train</div>
-          <div className="rounded-lg bg-zinc-800 p-1 px-2 py-1 text-sm">
-            <div>
-              <div className="my-1 flex">
-                Loss:{" "}
-                <select
-                  className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
-                  value={loss}
-                  onChange={(e) => setLoss(e.target.value)}
-                >
-                  <option value="BCE">BCE</option>
-                  <option value="CrossEntropy">CrossEntropy</option>
-                </select>
-              </div>
-              <div className="my-1 flex">
-                Optimizer:{" "}
-                <select
-                  className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
-                  value={optimizer}
-                  onChange={(e) => setOptimizer(e.target.value)}
-                >
-                  <option value="Adam">Adam</option>
-                  <option value="AdamW">AdamW</option>
-                  <option value="SGD">SGD</option>
-                  <option value="RMSprop">RMSprop</option>
-                </select>
-              </div>
-              <div className="my-1 flex">
-                Learning Rate:{" "}
-                <input
-                  type="range"
-                  name="Learning Rate"
-                  value={learningRate}
-                  onChange={(e) => setLearningRate(parseFloat(e.target.value))}
-                  min={0.001}
-                  max={0.1}
-                  step={0.001}
-                />
-                <input
-                  type="number"
-                  className="mx-1 w-14 rounded bg-zinc-700 py-1 text-right outline-none"
-                  value={learningRate}
-                  onChange={(e) => setLearningRate(parseFloat(e.target.value))}
-                />
-              </div>
-              <div className="my-1 flex">
-                Epochs:{" "}
-                <input
-                  type="range"
-                  name="Batch Size"
-                  value={epochs}
-                  onChange={(e) => setEpochs(parseInt(e.target.value))}
-                  min={1}
-                  max={1000}
-                />
-                <input
-                  type="number"
-                  className="mx-1 w-14 rounded bg-zinc-700 py-1 text-right outline-none"
-                  value={epochs}
-                  onChange={(e) => setEpochs(parseInt(e.target.value))}
-                />
-              </div>
-              <div className="my-1 flex">
-                Batch Size:{" "}
-                <input
-                  type="range"
-                  name="Batch Size"
-                  value={batchSize}
-                  onChange={(e) => setBatchSize(parseInt(e.target.value))}
-                  min={1}
-                  max={100}
-                />
-                <input
-                  type="number"
-                  className="mx-1 w-14 rounded bg-zinc-700 py-1 text-right outline-none"
-                  value={batchSize}
-                  onChange={(e) => setBatchSize(parseInt(e.target.value))}
-                />
-              </div>
-              <div
-                className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-all duration-300`}
-              >
-                <button
-                  disabled={isTraining}
-                  className={`rounded-2xl bg-zinc-700 px-6 py-2 text-lg transition-all ease-in-out ${
-                    !isTraining &&
-                    "hover:bg-indigo-600 hover:px-8 hover:ring-2 active:bg-indigo-500 active:px-9"
-                  } ring-indigo-500 duration-300 ${
-                    isTraining && "animate-bounce px-9 ring-2 ring-zinc-600"
-                  }`}
-                  onClick={() => {
-                    setIsTraining(true);
+        <div className="" ref={trainingSectionRef}>
+          <ToggleBlock
+            isOpen={isTrainingBlockOpen}
+            setIsOpen={setIsTrainingBlockOpen}
+            title={
+              <div className="flex w-full justify-between">
+                <div className="text-xl">Training Config</div>
+                {!isTrainingBlockOpen && (
+                  <button
+                    className={`mx-2 my-auto rounded-lg bg-zinc-700 px-4 py-1 transition-colors ease-in-out ${
+                      !isTraining && "hover:bg-indigo-600 active:bg-indigo-500"
+                    } ring-indigo-500 duration-300`}
+                    onClick={() => {
+                      setIsTraining(true);
 
-                    startTraining(
+                      startTraining(
+                        getConfig(
+                          selectedDataset,
+                          canvasBlocks,
+                          loss,
+                          optimizer,
+                          learningRate,
+                          epochs,
+                          batchSize,
+                        ),
+                      )
+                        .then((data: any) => {
+                          setTrainingResHistory([
+                            data.RESULTS,
+                            ...trainingResHistory,
+                          ]);
+                          setProgress(
+                            Math.round(data.RESULTS["avg_test_acc"] * 100) *
+                              0.01,
+                          );
+                        })
+                        .finally(() => {
+                          setIsTraining(false);
+                          showNotification(
+                            "Training Complete!",
+                            "Your model has been trained successfully.",
+                          );
+                        });
+                    }}
+                  >
+                    {isTraining ? (
+                      <SpinnerIcon className="h-5 animate-spin" />
+                    ) : (
+                      "Train"
+                    )}
+                  </button>
+                )}
+              </div>
+            }
+            className={`rounded-xl ring ${isTraining ? "ring-2 ring-orange-500" : "ring-zinc-700"}`}
+          >
+            <div className="rounded-lg bg-zinc-800 p-1 px-2 py-1 text-sm">
+              <div>
+                <div className="my-1 flex">
+                  Loss:{" "}
+                  <select
+                    className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
+                    value={loss}
+                    onChange={(e) => setLoss(e.target.value)}
+                  >
+                    <option value="BCE">BCE</option>
+                    <option value="CrossEntropy">CrossEntropy</option>
+                  </select>
+                </div>
+                <div className="my-1 flex">
+                  Optimizer:{" "}
+                  <select
+                    className="mx-1 cursor-pointer rounded bg-zinc-700 p-1 text-sm text-white outline-none"
+                    value={optimizer}
+                    onChange={(e) => setOptimizer(e.target.value)}
+                  >
+                    <option value="Adam">Adam</option>
+                    <option value="AdamW">AdamW</option>
+                    <option value="SGD">SGD</option>
+                    <option value="RMSprop">RMSprop</option>
+                  </select>
+                </div>
+                <div className="my-1 flex">
+                  Learning Rate:{" "}
+                  <input
+                    type="range"
+                    name="Learning Rate"
+                    value={learningRate}
+                    onChange={(e) =>
+                      setLearningRate(parseFloat(e.target.value))
+                    }
+                    min={0.001}
+                    max={0.1}
+                    step={0.001}
+                  />
+                  <input
+                    type="number"
+                    className="mx-1 w-14 rounded bg-zinc-700 py-1 text-right outline-none"
+                    value={learningRate}
+                    onChange={(e) =>
+                      setLearningRate(parseFloat(e.target.value))
+                    }
+                  />
+                </div>
+                <div className="my-1 flex">
+                  Epochs:{" "}
+                  <input
+                    type="range"
+                    name="Batch Size"
+                    value={epochs}
+                    onChange={(e) => setEpochs(parseInt(e.target.value))}
+                    min={1}
+                    max={1000}
+                  />
+                  <input
+                    type="number"
+                    className="mx-1 w-14 rounded bg-zinc-700 py-1 text-right outline-none"
+                    value={epochs}
+                    onChange={(e) => setEpochs(parseInt(e.target.value))}
+                  />
+                </div>
+                <div className="my-1 flex">
+                  Batch Size:{" "}
+                  <input
+                    type="range"
+                    name="Batch Size"
+                    value={batchSize}
+                    onChange={(e) => setBatchSize(parseInt(e.target.value))}
+                    min={1}
+                    max={100}
+                  />
+                  <input
+                    type="number"
+                    className="mx-1 w-14 rounded bg-zinc-700 py-1 text-right outline-none"
+                    value={batchSize}
+                    onChange={(e) => setBatchSize(parseInt(e.target.value))}
+                  />
+                </div>
+                <div
+                  className={`m-2 ${isTraining && "mt-8"} flex justify-center transition-transform duration-300`}
+                >
+                  <button
+                    disabled={isTraining}
+                    className={`rounded-2xl bg-zinc-700 px-6 py-2 text-lg transition-colors ease-in-out ${
+                      !isTraining && "hover:bg-indigo-600 active:bg-indigo-500"
+                    } ring-indigo-500 duration-300 ${
+                      isTraining && "px-9 ring-2 ring-zinc-600"
+                    }`}
+                    onClick={() => {
+                      setIsTraining(true);
+
+                      startTraining(
+                        getConfig(
+                          selectedDataset,
+                          canvasBlocks,
+                          loss,
+                          optimizer,
+                          learningRate,
+                          epochs,
+                          batchSize,
+                        ),
+                      )
+                        .then((data: any) => {
+                          setTrainingResHistory([
+                            data.RESULTS,
+                            ...trainingResHistory,
+                          ]);
+                          setProgress(
+                            Math.round(data.RESULTS["avg_test_acc"] * 100) *
+                              0.01,
+                          );
+                        })
+                        .finally(() => {
+                          setIsTraining(false);
+                          showNotification(
+                            "Training Complete!",
+                            "Your model has been trained successfully.",
+                          );
+                        });
+                    }}
+                  >
+                    {isTraining ? (
+                      <div className="flex items-center">
+                        <div className="flex">
+                          <SpinnerIcon className="my-auto mr-2 h-5 animate-spin" />
+                          <div>Training...</div>
+                        </div>
+                        {/* <img src="dino-running.gif" className="w-14" /> */}
+                      </div>
+                    ) : (
+                      "Train"
+                    )}
+                  </button>
+                </div>
+                <button
+                  className="my-2 w-full rounded-md bg-blue-500 px-4 py-2"
+                  onClick={() => {
+                    downloadFile(
                       getConfig(
-                        selectedDataset,
+                        "pima",
                         canvasBlocks,
                         loss,
                         optimizer,
-                        learningRate,
-                        epochs,
-                        batchSize,
+                        0.001,
+                        100,
+                        10,
                       ),
-                    )
-                      .then((data: any) => {
-                        setTrainingRes(data.RESULTS);
-                        setProgress(
-                          Math.round(data.RESULTS["avg_test_acc"] * 100) * 0.01,
-                        );
-                      })
-                      .finally(() => {
-                        setIsTraining(false);
-                        setIsModalOpen(true);
-                        showNotification(
-                          "Training Complete!",
-                          "Your model has been trained successfully.",
-                        );
-                      });
+                    );
                   }}
                 >
-                  {isTraining ? (
-                    <div className="flex items-center">
-                      <div>Training...</div>{" "}
-                      {/* <img src="dino-running.gif" className="w-14" /> */}
-                    </div>
-                  ) : (
-                    "Train"
-                  )}
+                  Download Python Notebook
                 </button>
               </div>
             </div>
-          </div>
-          <div>
-            <div>
-              <button
-                className="my-2 w-full rounded-md bg-blue-500 px-4 py-2"
-                onClick={() => {
-                  downloadFile(
-                    getConfig(
-                      "pima",
-                      canvasBlocks,
-                      loss,
-                      optimizer,
-                      0.001,
-                      100,
-                      10,
-                    ),
+          </ToggleBlock>
+          <ToggleBlock
+            isOpen={isResultsBlockOpen}
+            setIsOpen={setIsResultsBlockOpen}
+            className="mt-4 h-1/2 rounded-xl ring ring-zinc-700"
+            title={
+              <div className="flex w-full justify-between">
+                <div className="text-xl">Results</div>
+              </div>
+            }
+          >
+            <div className="text-sm">
+              {trainingResHistory.length !== 0 ? (
+                trainingResHistory.map((trainingRes, idx) => {
+                  return (
+                    <div
+                      key={idx}
+                      className={`rounded-lg bg-zinc-800 p-1 px-2 py-1 ${isResultsBlockOpen && "my-2"}`}
+                    >
+                      <div>#{trainingResHistory.length - idx}</div>
+                      {Object.keys(trainingRes).map((key) => {
+                        return (
+                          <div key={key} className="flex justify-between">
+                            <div>{key}</div>
+                            <div className="flex">
+                              {idx !== trainingResHistory.length - 1 &&
+                                (() => {
+                                  const diff = Math.round(
+                                    trainingRes[key] -
+                                      trainingResHistory[idx + 1][key],
+                                  );
+                                  return diff < 0 ? (
+                                    <div className="text-zinc-500">
+                                      (
+                                      <span className="text-red-600">
+                                        {diff}
+                                      </span>
+                                      )
+                                    </div>
+                                  ) : (
+                                    <div className="text-zinc-500">
+                                      (
+                                      <span className="text-green-600">
+                                        +{diff}
+                                      </span>
+                                      )
+                                    </div>
+                                  );
+                                })()}
+                              <div className="ml-1">
+                                {Math.round(trainingRes[key])}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   );
-                }}
-              >
-                Download Python Notebook
-              </button>
+                })
+              ) : (
+                <div className="text-center">No training results yet.</div>
+              )}
             </div>
-          </div>
+          </ToggleBlock>
         </div>
       </div>
 
@@ -374,6 +501,33 @@ const LayersBoard = ({
           </div>
         )}
       </DragOverlay>
+
+      {isDemoing && (
+        <div className="absolute left-0 top-0 z-20 flex h-full w-full items-center justify-center bg-zinc-900 bg-opacity-0">
+          <DemoCard
+            currIdx={demoIdx}
+            description={DEMO_CARDS[demoIdx]?.description!}
+            maxIdx={DEMO_CARDS.length - 1}
+            next={demoIdx !== DEMO_CARDS.length - 1}
+            prev={demoIdx !== 0}
+            onNext={() => setDemoIdx(demoIdx + 1)}
+            onPrev={() => {
+              setDemoIdx(demoIdx - 1);
+            }}
+            title={DEMO_CARDS[demoIdx]?.title!}
+            x={DEMO_CARDS[demoIdx]?.x!}
+            y={DEMO_CARDS[demoIdx]?.y!}
+            component={SectionRefs[DEMO_CARDS[demoIdx]?.section!]}
+            closeDemo={() => {
+              setIsDemoing(false);
+              Array.from(boardRef.current?.children).forEach((child) => {
+                child.classList.remove("opacity-20");
+              });
+              setDemoIdx(0);
+            }}
+          />
+        </div>
+      )}
     </DndContext>
   );
 };

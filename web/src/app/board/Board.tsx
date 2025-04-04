@@ -21,6 +21,7 @@ const Board = () => {
   }, [mode]);
 
   // global layer state
+  const trainingBlockToggleState = useState(true);
   const lossState = useState("BCE");
   const optimizerState = useState("Adam");
   const learningRateState = useState(0.001);
@@ -28,10 +29,12 @@ const Board = () => {
   const batchSizeState = useState(10);
 
   const isTrainingState = useState(false);
-  const trainingResState = useState<any | null>(null);
+  const trainingResHistoryState = useState<any[]>([]);
   const progressState = useState(0);
 
   const isLoadingSuggestionsState = useState(false);
+
+  const resultsBlockToggleState = useState(true);
 
   const [permission, setPermission] = useState("denied");
 
@@ -109,15 +112,17 @@ const Board = () => {
         ) : (
           <LayersBoard
             selectedDataset={selectedDataset}
+            trainingBlockToggleState={trainingBlockToggleState}
             lossState={lossState}
             optimizerState={optimizerState}
             learningRateState={learningRateState}
             epochState={epochState}
             batchSizeState={batchSizeState}
             isTrainingState={isTrainingState}
-            trainingResState={trainingResState}
+            trainingResHistoryState={trainingResHistoryState}
             progressState={progressState}
             isLoadingSuggestionsState={isLoadingSuggestionsState}
+            resultsBlockToggleState={resultsBlockToggleState}
             showNotification={showNotification}
           />
         )}
