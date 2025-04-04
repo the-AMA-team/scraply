@@ -246,4 +246,3 @@ for sentence in sentences:
     temperature = 0.2
     print("TEMPERATURE " + str(temperature) + ":")
     text_generator(sentence, generate_length, temperature)
-#

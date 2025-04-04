@@ -44,7 +44,7 @@ def generate():
         return {"status": "failed", "error": str(e)}
 
 
-@app.post("/train")
+@app.post("/train") # this is basically train AND test
 def train():
     # example data
 # data = {
