@@ -82,13 +82,14 @@ ACTIVATIONS = {
 
 
 LAYERS = {
-    "Flatten": nn.Flatten(),
+    "Flatten": lambda start_dim, end_dim: nn.Flatten(start_dim, end_dim), #  added unnecessary arguments to avoid weird params.lambda error
     "Linear": lambda i, o: nn.Linear(i, o),
-    "Conv2D": lambda i, o, k_size: nn.Conv2d(
-        i, o, k_size
-    ),  # i = input channels (1 --> grayscale, 3 --> RGB), o = output channels (number of filters), k_size = kernel size
+    "Conv2D": lambda i, o, k_size: nn.Conv2d(i, o, k_size),  # i = input channels (1 --> grayscale, 3 --> RGB), o = output channels (number of filters), k_size = kernel size
     "Conv1D": lambda i, o, k_size: nn.Conv1d(i, o, k_size),
     "Conv3D": lambda i, o, k_size: nn.Conv3d(i, o, k_size),
+    "MaxPool2D": lambda k_size, stride: nn.MaxPool2d(k_size, stride),
+    "MaxPool1D": lambda k_size, stride: nn.MaxPool1d(k_size, stride),
+    "MaxPool3D": lambda k_size, stride: nn.MaxPool3d(k_size, stride),
     "LSTM": lambda i, h_size: nn.LSTM(i, h_size),
     "GRU": lambda i, h_size: nn.GRU(i, h_size),
     "RNN": lambda i, h_size: nn.RNN(i, h_size),
@@ -101,10 +102,10 @@ LAYERS = {
 
 LOSSES = {
     "BCE": nn.BCELoss(),  # binary cross entropy --> 0 or 1 classification models
-    "CrossEntropy": nn.CrossEntropyLoss(),  # multi-class classification models
+    "CrossEntropy": nn.CrossEntropyLoss(),  # multi-class classification models (including CNN)
     # "MSE": nn.MSELoss() # regression models
+    "BCEWithLogitsLoss": nn.BCEWithLogitsLoss(),  # with logits for CNN binary classification
 }
-
 
 OPTIMIZERS = {
     "Adam": lambda model_params, lr: optim.Adam(

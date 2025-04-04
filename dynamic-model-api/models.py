@@ -43,7 +43,17 @@ class DynamicModel(nn.Module):
                     component = LAYERS[layer_type](p=layer_args)  # 1 arg
 
                 elif layer_type == "Flatten":
-                    component = LAYERS[layer_type]  # no args needed
+                    start_dim, end_dim = layer_args
+                    component = LAYERS[layer_type](start_dim, end_dim)
+                    
+                elif layer_type in ["MaxPool1D", "MaxPool2D", "MaxPool3D"]:
+                    k_size, stride = layer_args
+                    component = LAYERS[layer_type](k_size, stride)
+                    
+                if component is None:
+                    print(f"Layer {layer_type} not recognized or not implemented.")
+                    
+                    
 
             elif layer_type in ACTIVATIONS.keys():  # is activation function
                 component = ACTIVATIONS[layer_type]
@@ -51,6 +61,8 @@ class DynamicModel(nn.Module):
             else:
                 print("Invalid layer type")
                 break
+            
+            
 
             self.layer_list.append(component)
 
@@ -324,18 +336,14 @@ class Train:
             # could normalize the data here
             # create tensors
             X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
-            y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(
-                -1, 1
-            )  # Reshape for binary classification
+            y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(1, 1)  # Reshape for binary classification
             X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
             y_test_tensor = torch.tensor(y_test, dtype=torch.float32).reshape(-1, 1)
             # create dataset objects
             train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
             test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
             # create dataLoader objects
-            self.train_loader = DataLoader(
-                train_dataset, batch_size=batch_size, shuffle=True
-            )
+            self.train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
             self.test_loader = DataLoader(
                 test_dataset, batch_size=batch_size, shuffle=False
             )
@@ -355,7 +363,8 @@ class Train:
         )
 
         self.final_loss = -1
-
+        
+        
     def train(self, n_epochs, batch_size):
         size = len(self.train_loader.dataset)
         # num_batches = len(self.train_loader)
@@ -388,14 +397,14 @@ class Train:
 
             if batch % 100 == 0:
                 loss, current = loss.item(), (batch + 1) * len(X)
-                print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+                # print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
         # Average loss over all batches
         avg_train_loss = train_loss / len(self.train_loader)
         # Calculate accuracy as a percentage
         avg_acc = 100 * correct / total
         return avg_train_loss, avg_acc
-
+        
     def test(self, n_epochs, batch_size):
         size = len(self.test_loader.dataset)
         num_batches = len(self.test_loader)
@@ -420,11 +429,6 @@ class Train:
         correct /= size
         avg_acc = 100 * correct
 
-        # Print loss & accuracy
-        print(
-            f"Test Error: \n Accuracy: {(avg_acc):>0.1f}%, Avg loss: {test_loss:>8f} \n"
-        )
-
         # Average loss over all batches
         avg_test_loss = test_loss / len(self.test_loader)
         return avg_test_loss, avg_acc
@@ -435,9 +439,11 @@ class Train:
         test_losses = []
         test_accs = []
         for t in range(n_epochs):
-            print(f"Epoch {t + 1}\n-------------------------------")
+            print(f"Epoch {t + 1}/{n_epochs}...")
             avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
+            print(f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n")
             avg_test_loss, test_avg_acc = self.test(n_epochs, batch_size)
+            print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n")
 
             # Store losses
             train_losses.append(avg_train_loss)
