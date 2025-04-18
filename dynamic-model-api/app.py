@@ -90,7 +90,7 @@ def train():
             batch_size=batch_size,
         )
 
-        print("slay")
+        print("slay... model initialized successfully!")
         RESULTS = t.train_test_log(n_epochs, batch_size)
 
     except Exception as e:

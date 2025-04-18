@@ -336,7 +336,7 @@ class Train:
             # could normalize the data here
             # create tensors
             X_train_tensor = torch.tensor(X_train, dtype=torch.float32)
-            y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(1, 1)  # Reshape for binary classification
+            y_train_tensor = torch.tensor(y_train, dtype=torch.float32).reshape(-1, 1)  # Reshape for binary classification # SWITCHED FROM 1 1 TO -1 1
             X_test_tensor = torch.tensor(X_test, dtype=torch.float32)
             y_test_tensor = torch.tensor(y_test, dtype=torch.float32).reshape(-1, 1)
             # create dataset objects
