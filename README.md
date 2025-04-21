@@ -14,7 +14,7 @@ Scraply is a web app where users can run neural networks using a scratch-like in
 - 👾 explainability features
 - 👾 complete support for transformers 
 
-### Team
+### Made by the-AMA-team
 
 1. Alan 🧑‍🍳
 2. Mehek 🤓
