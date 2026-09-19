@@ -440,7 +440,7 @@ torch.save(model.state_dict(), 'trained_model.pth')
 print("\\nModel saved as 'trained_model.pth'")"""
 
     def generate_notebook(self):
-        """Generate a focused notebook for the user's specific architecture"""
+        """Return notebook JSON for the user's architecture (not written to disk)."""
 
         # Cell 1: Title and Overview
         title_cell = nbf.v4.new_markdown_cell(f"""# {self.params["input"].upper()} Neural Network Training
@@ -496,7 +496,6 @@ print("Libraries imported successfully!")""")
         # Cell 7: Training Loop (dynamically generated)
         training_loop_cell = nbf.v4.new_code_cell(self._generate_training_loop_cell())
 
-        # Create notebook
         nb = nbf.v4.new_notebook()
         nb.cells = [
             title_cell,
@@ -507,58 +506,4 @@ print("Libraries imported successfully!")""")
             training_cell,
             training_loop_cell,
         ]
-
-        # Write the notebook to a file
-        with open("generated_notebook.ipynb", "w") as f:
-            nbf.write(nb, f)
-
-        print("Notebook generated as 'generated_notebook.ipynb'")
-        print(f"Dataset: {self.params['input']}")
-        print(f"Architecture: {len(self.params['layers'])} layers")
-        print(f"Training: {self.params['epoch']} epochs")
-
-
-if __name__ == "__main__":
-    # Example usage
-    params = {
-        "input": "pima",
-        "layers": [
-            {"kind": "Linear", "args": (8, 12)},
-            {"kind": "ReLU"},
-            {"kind": "Linear", "args": (12, 8)},
-            {"kind": "ReLU"},
-            {"kind": "Linear", "args": (8, 1)},
-            {"kind": "Sigmoid"},
-        ],
-        "loss": "BCE",
-        "optimizer": {"kind": "Adam", "lr": 0.001},
-        "epoch": 3,
-        "batch_size": 10,
-    }
-
-    # params = {
-    #     "input": "MNIST",
-    #     "layers": [
-    #         {
-    #             "kind": "Conv2D",
-    #             "args": (2, 1, 16, 3, 1, 0),
-    #         },  # dim, input, output, kernel size, stride, padding.
-    #         # dim is a fake arg we made up so we just ignore it in the actual api. same for maxpool layers.
-    #         {"kind": "ReLU"},
-    #         {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
-    #         {"kind": "Conv2D", "args": (2, 16, 32, 3, 1, 0)},
-    #         {"kind": "ReLU"},
-    #         {"kind": "MaxPool2D", "args": (2, 2, 2, 0)},
-    #         {"kind": "Flatten", "args": [1, -1]},
-    #         {"kind": "Linear", "args": (800, 128)},  # supposed to be 32 * 7 * 7
-    #         {"kind": "ReLU"},
-    #         {"kind": "Linear", "args": (128, 10)},
-    #     ],
-    #     "loss": "CrossEntropy",
-    #     "optimizer": {"kind": "Adam", "lr": 0.001},
-    #     "epoch": 2,
-    #     "batch_size": 64,
-    # }
-
-    gen = Generate(params)
-    gen.generate_notebook()
+        return nbf.writes(nb)

@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 import socketio
 from models import DynamicModel, Train
@@ -80,8 +80,14 @@ async def generate(request: Request):
 
     try:
         gen = Generate(data)
-        gen.generate_notebook()
-        return FileResponse("generated_notebook.ipynb")
+        notebook_json = gen.generate_notebook()
+        return Response(
+            content=notebook_json.encode("utf-8"),
+            media_type="application/x-ipynb+json",
+            headers={
+                "Content-Disposition": 'attachment; filename="generated_notebook.ipynb"'
+            },
+        )
     except Exception as e:
         return {"status": "failed", "error": str(e)}
 
