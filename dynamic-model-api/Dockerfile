@@ -25,6 +25,8 @@ EXPOSE 5000
 # Run your app with uvicorn
 CMD ["uvicorn", "app:asgi_app", "--host", "0.0.0.0", "--port", "5000"]
 
+# setup for CPU usage (not GPU)
+
 # ----- DOCKER INSTRUCTIONS: -----
 # OPEN docker destop
 # NAVIGATE TO scraply/dynamic-model-api
