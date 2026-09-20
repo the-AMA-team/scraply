@@ -17,6 +17,6 @@ scipy
 seaborn
 nbformat
 # PYTORCH (will install cpu version, must download manually to match with machine):
-torch 
-torchaudio 
-torchvision 
+# torch 
+# torchaudio 
+# torchvision 

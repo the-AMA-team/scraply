@@ -1,0 +1,9 @@
+__pycache__
+*.pyc
+.git
+data
+new_sample_output.json
+cnn_analysis_results
+random_cnn_tests
+docker-compose.prod.yml
+docker-compose.yml

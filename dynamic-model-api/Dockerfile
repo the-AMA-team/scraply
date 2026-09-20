@@ -13,19 +13,23 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install
+# force CPU torch installation
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu \
+ && pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of your app
 COPY . .
 
+ENV PYTHONUNBUFFERED=1
 # Expose the port the app runs on
 EXPOSE 5000
 
 # Run your app with uvicorn
 CMD ["uvicorn", "app:asgi_app", "--host", "0.0.0.0", "--port", "5000"]
 
-# setup for CPU usage (not GPU)
+# this setup is for CPU usage (not GPU)
 
 # ----- DOCKER INSTRUCTIONS: -----
 # OPEN docker destop
