@@ -13,6 +13,8 @@ import asyncio
 import random
 from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 import os
+import copy
+import tempfile
 import numpy as np
 from scipy.special import entr
 import base64
@@ -91,7 +93,8 @@ class DynamicModel(nn.Module):
                     print(f"Layer {layer_type} not recognized or not implemented.")
 
             elif layer_type in ACTIVATIONS.keys():
-                component = ACTIVATIONS[layer_type]
+                # Copy so concurrent jobs do not share one Module instance
+                component = copy.deepcopy(ACTIVATIONS[layer_type])
 
             else:
                 print("Invalid layer type")
@@ -187,7 +190,7 @@ class Train:
                 test_set, batch_size=batch_size, shuffle=False
             )
 
-        self.loss_fn = LOSSES[loss]
+        self.loss_fn = copy.deepcopy(LOSSES[loss])
         self.optimizer = OPTIMIZERS[optimizer["kind"]](
             self.model.parameters(), optimizer["lr"]
         )
@@ -647,6 +650,7 @@ class Train:
         socketio=None,
         active_training=None,
         dev_testing=False,
+        room=None,
     ):
         """Async version of train_test_log_stream for use with ASGI servers"""
         # intended for default to support streaming. however, socketio object and active_training must be passed in. they optional for dev_testing
@@ -660,13 +664,29 @@ class Train:
 
         RANDOM_SAMPLES_ENCODED = {}
         MISCLASSIFIED_SAMPLES_ENCODED = {}
+        job_id = (active_training or {}).get("job_id") or "default"
+        sample_root = os.path.join(tempfile.gettempdir(), "scraply_jobs", str(job_id))
 
-        if dev_testing:
-            print("training_started", {"total_epochs": n_epochs, "dataset": self.input})
-        else:
-            await socketio.emit(
-                "training_started", {"total_epochs": n_epochs, "dataset": self.input}
-            )
+        async def _emit(event, data):
+            if dev_testing or socketio is None:
+                print(event, data)
+                return
+            # Never broadcast: a missing room would send this job's events to every client
+            if not room:
+                print(f"Skipping {event}: no job room (refusing global broadcast)")
+                return
+            payload = dict(data) if isinstance(data, dict) else {"data": data}
+            if job_id != "default":
+                payload["job_id"] = job_id
+            await socketio.emit(event, payload, room=room)
+
+        await _emit(
+            "training_started",
+            {
+                "total_epochs": n_epochs,
+                "dataset": self.input,
+            },
+        )
 
         async def _pause_state_notifier():
             """Emit pause/resume only when loop is actually paused/resumed."""
@@ -677,13 +697,13 @@ class Train:
                 if now != last:
                     if now:
                         print("⏸️  Training paused (confirmed)")
-                        await socketio.emit(
+                        await _emit(
                             "training_paused",
                             {"message": "Training is paused"},
                         )
                     else:
                         print("▶️  Training Resumed (confirmed)")
-                        await socketio.emit(
+                        await _emit(
                             "training_resumed",
                             {"message": "Training is running"},
                         )
@@ -711,7 +731,7 @@ class Train:
                     if not active_training.get("is_training", False):
                         # Training was stopped while paused
                         print("🛑 Training was stopped while paused")
-                        await socketio.emit(
+                        await _emit(
                             "training_stopped", {"message": "Training stopped"}
                         )
                         if pause_notifier_task:
@@ -723,7 +743,7 @@ class Train:
                 # Check if training was stopped
                 if not active_training or not active_training.get("is_training", False):
                     print("🛑 Training stopped before epoch completion")
-                    await socketio.emit(
+                    await _emit(
                         "training_stopped", {"message": "Training stopped"}
                     )
                     if pause_notifier_task:
@@ -731,7 +751,7 @@ class Train:
                     return
 
             print(f"Epoch {t + 1}/{n_epochs}...")
-            await socketio.emit(
+            await _emit(
                 "epoch_started", {"epoch": t + 1, "total_epochs": n_epochs}
             )
             # emit is method to send events and data to clients via websocket
@@ -741,7 +761,7 @@ class Train:
 
             # If stop was requested during training, exit ASAP
             if active_training and not active_training.get("is_training", False):
-                await socketio.emit("training_stopped", {"message": "Training stopped"})
+                await _emit("training_stopped", {"message": "Training stopped"})
                 if pause_notifier_task:
                     pause_notifier_task.cancel()
                 return
@@ -781,13 +801,13 @@ class Train:
                         print("----------processing random samples-----------")
                         RANDOM_SAMPLES_ENCODED = self.process_image_samples(
                             random_samples,
-                            "cnn_analysis_results",
+                            sample_root,
                             dev_testing=dev_testing,
                         )
                         print("----------processing misclassified samples-----------")
                         MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
                             misclassified_samples,
-                            "cnn_analysis_results/lowest_accuracy_classes",
+                            os.path.join(sample_root, "lowest_accuracy_classes"),
                             dev_testing=dev_testing,
                         )
                     else:  # Fallback for 5-value return
@@ -801,7 +821,7 @@ class Train:
 
             # If stop was requested during eval, exit ASAP
             if active_training and not active_training.get("is_training", False):
-                await socketio.emit("training_stopped", {"message": "Training stopped"})
+                await _emit("training_stopped", {"message": "Training stopped"})
                 if pause_notifier_task:
                     pause_notifier_task.cancel()
                 return
@@ -833,7 +853,7 @@ class Train:
                 active_training["current_progress"] = progress_data
 
             # Emit epoch progress
-            await socketio.emit("epoch_completed", progress_data)
+            await _emit("epoch_completed", progress_data)
 
         # Calculate final averages
         avg_train_acc = sum(train_accs) / len(train_accs)
@@ -869,7 +889,7 @@ class Train:
         }
 
         # Emit training completion
-        await socketio.emit(
+        await _emit(
             "training_completed",
             {"final_results": RESULTS, "message": "Training completed successfully!"},
         )

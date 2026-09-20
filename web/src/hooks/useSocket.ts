@@ -2,6 +2,32 @@ import { useEffect, useRef, useState } from "react";
 import io, { Socket } from "socket.io-client";
 import { API_CONFIG, SOCKET_CONFIG } from "~/util/config";
 
+const JOB_STORAGE_KEY = "scraply_training_job_id";
+
+function readStoredJobId(): string | null {
+  try {
+    return sessionStorage.getItem(JOB_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredJobId(jobId: string) {
+  try {
+    sessionStorage.setItem(JOB_STORAGE_KEY, jobId);
+  } catch {
+    // sessionStorage can throw in private browsing
+  }
+}
+
+function clearStoredJobId() {
+  try {
+    sessionStorage.removeItem(JOB_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 interface TrainingProgress {
   epoch: number;
   total_epochs: number;
@@ -69,14 +95,22 @@ export const useSocket = (): UseSocketReturn => {
       console.log("Connected to training server");
       setIsConnected(true);
 
-      // Check if there's an ongoing training session
-      newSocket.emit("check_training_status");
+      const jobId = readStoredJobId();
+      if (jobId) {
+        newSocket.emit("join_job", { job_id: jobId });
+      } else {
+        newSocket.emit("check_training_status");
+      }
     });
 
     newSocket.on("disconnect", () => {
       console.log("Disconnected from training server");
       setIsConnected(false);
       setIsTrainingActive(false);
+    });
+
+    newSocket.on("job_not_found", () => {
+      clearStoredJobId();
     });
 
     // Use Page Visibility API to detect tab switching vs closing
@@ -92,8 +126,12 @@ export const useSocket = (): UseSocketReturn => {
         isTabClosing = false;
         if (newSocket.connected) {
           newSocket.emit("tab_visible");
-          // Recheck training status when tab becomes visible
-          newSocket.emit("check_training_status");
+          const jobId = readStoredJobId();
+          if (jobId) {
+            newSocket.emit("join_job", { job_id: jobId });
+          } else {
+            newSocket.emit("check_training_status");
+          }
         }
       }
     };
@@ -140,6 +178,9 @@ export const useSocket = (): UseSocketReturn => {
     // Training events
     newSocket.on("training_started", (data) => {
       console.log("Training started:", data);
+      if (data?.job_id) {
+        writeStoredJobId(data.job_id);
+      }
       isTrainingActiveRef.current = true;
       setIsTrainingActive(true);
       setIsTrainingPausing(false);
@@ -183,6 +224,9 @@ export const useSocket = (): UseSocketReturn => {
     // Handle training status check response
     newSocket.on("training_status", (data: any) => {
       console.log("Training status:", data);
+      if (data.job_id) {
+        writeStoredJobId(data.job_id);
+      }
       if (data.is_training) {
         isTrainingActiveRef.current = true;
         setIsTrainingActive(true);
@@ -236,6 +280,7 @@ export const useSocket = (): UseSocketReturn => {
 
     newSocket.on("training_stopped", (data: any) => {
       console.log("Training stopped:", data);
+      clearStoredJobId();
       isTrainingActiveRef.current = false;
       setIsTrainingPausing(false);
       setIsTrainingActive(false);
@@ -251,6 +296,12 @@ export const useSocket = (): UseSocketReturn => {
   }, []);
 
   const startTraining = async (config: any) => {
+    const socket = socketRef.current;
+    if (!socket?.connected || !socket.id) {
+      setTrainingError("Not connected to training server");
+      return;
+    }
+
     try {
       const response = await fetch(API_CONFIG.getApiUrl("/train-stream"), {
         method: "POST",
@@ -259,14 +310,26 @@ export const useSocket = (): UseSocketReturn => {
           // Required when using ngrok endpoints to suppress browser interstitial
           "ngrok-skip-browser-warning": "true",
         },
-        body: JSON.stringify(config),
+        body: JSON.stringify({ ...config, socket_id: socket.id }),
       });
 
       if (!response.ok) {
-        throw new Error(`Training request failed: ${response.status}`);
+        let message = `Training request failed: ${response.status}`;
+        try {
+          const err = await response.json();
+          if (typeof err.detail === "string") {
+            message = err.detail;
+          }
+        } catch {
+          // keep fallback message
+        }
+        throw new Error(message);
       }
 
       const result = await response.json();
+      if (result.job_id) {
+        writeStoredJobId(result.job_id);
+      }
       console.log("Training started:", result);
     } catch (error) {
       console.error("Failed to start training:", error);
@@ -295,6 +358,7 @@ export const useSocket = (): UseSocketReturn => {
   };
 
   const resetTraining = () => {
+    clearStoredJobId();
     setTrainingProgress(null);
     setTrainingCompleted(null);
     setTrainingError(null);
@@ -306,7 +370,12 @@ export const useSocket = (): UseSocketReturn => {
 
   const checkTrainingStatus = () => {
     if (socketRef.current?.connected) {
-      socketRef.current.emit("check_training_status");
+      const jobId = readStoredJobId();
+      if (jobId) {
+        socketRef.current.emit("join_job", { job_id: jobId });
+      } else {
+        socketRef.current.emit("check_training_status");
+      }
     }
   };
 
