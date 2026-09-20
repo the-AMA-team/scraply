@@ -22,8 +22,8 @@ from collections import Counter
 import threading
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "https://scraply-prod.vercel.app"])
-socketio = SocketIO(app, cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],)
+CORS(app, origins=["http://localhost:3000", "https://scraply-prod.vercel.app", "https://scraply-five.vercel.app"])
+socketio = SocketIO(app, cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app", "https://scraply-five.vercel.app"],)
 
 @app.route("/")
 def hello_world():
