@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import pandas as pd
 from collections import Counter
+from pathlib import Path
 
 from torch.utils.data import Dataset
 from torchvision import datasets
@@ -13,58 +14,52 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 
-DATALOADERS = {
-    "alice": {  # dataset for decoder-only transformer, demonstrating text generation
-        "file": "datasets/alice_1.txt"
-    },
-    "shakespeare": {"file": "datasets/shakespeare.txt"},
-    "pima": {
-        "X": pd.read_csv("https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv").iloc[:, :-1].values,
-        "y": pd.read_csv("https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv").iloc[:, -1].values,
-    },
-    "MNIST": {
-        "train": datasets.MNIST(
-            root="data",
+_DATA_DIR = Path(__file__).resolve().parent
+_TORCHVISION_ROOT = _DATA_DIR / "data"
+_PIMA_CSV = _DATA_DIR / "datasets" / "pima-indians-diabetes.csv"
+_IMAGE_TRANSFORM = transforms.Compose([transforms.ToTensor()])
+_DATASET_CACHE = {}
+
+
+def _load_image_dataset(dataset_cls):
+    return {
+        "train": dataset_cls(
+            root=str(_TORCHVISION_ROOT),
             train=True,
             download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
+            transform=_IMAGE_TRANSFORM,
         ),
-        "test": datasets.MNIST(
-            root="data",
+        "test": dataset_cls(
+            root=str(_TORCHVISION_ROOT),
             train=False,
             download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
+            transform=_IMAGE_TRANSFORM,
         ),
-    },
-    "FashionMNIST": {
-        "train": datasets.FashionMNIST(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-        "test": datasets.FashionMNIST(
-            root="data",
-            train=False,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-    },
-    "CIFAR10": {
-        "train": datasets.CIFAR10(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-        "test": datasets.CIFAR10(
-            root="data",
-            train=False,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-    },
-}
+    }
+
+
+def _load_dataset(name: str):
+    if name == "alice":
+        return {"file": str(_DATA_DIR / "datasets" / "alice_1.txt")}
+    if name == "shakespeare":
+        return {"file": str(_DATA_DIR / "datasets" / "shakespeare.txt")}
+    if name == "pima":
+        data = pd.read_csv(_PIMA_CSV, header=None).values
+        return {"X": data[:, :-1], "y": data[:, -1]}
+    if name == "MNIST":
+        return _load_image_dataset(datasets.MNIST)
+    if name == "FashionMNIST":
+        return _load_image_dataset(datasets.FashionMNIST)
+    if name == "CIFAR10":
+        return _load_image_dataset(datasets.CIFAR10)
+    raise KeyError(f"Unknown dataset: {name}")
+
+
+def get_dataloader(name: str):
+    """Load a dataset on first use and reuse it for later training jobs."""
+    if name not in _DATASET_CACHE:
+        _DATASET_CACHE[name] = _load_dataset(name)
+    return _DATASET_CACHE[name]
 
 
 ACTIVATIONS = {

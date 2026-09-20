@@ -11,7 +11,7 @@ import cv2  # --> pip install opencv-python
 import time
 import asyncio
 import random
-from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
+from params import get_dataloader, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 import os
 import copy
 import tempfile
@@ -142,7 +142,7 @@ class Train:
         self.model = model
         self.input = input
         self.num_classes = 0
-        ds = DATALOADERS[input]
+        ds = get_dataloader(input)
 
         if torch.cuda.is_available():
             self.device = "cuda"

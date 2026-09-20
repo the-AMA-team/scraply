@@ -2,7 +2,7 @@ import nbformat as nbf
 import sys
 
 sys.path.append(".")
-from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
+from params import LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
 
 
 class Generate:
