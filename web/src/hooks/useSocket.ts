@@ -45,10 +45,16 @@ interface TrainingCompleted {
   message: string;
 }
 
+interface TrainingPhase {
+  message: string;
+  stage?: string;
+}
+
 interface UseSocketReturn {
   socket: Socket | null;
   isConnected: boolean;
   trainingProgress: TrainingProgress | null;
+  trainingPhase: TrainingPhase | null;
   isTrainingActive: boolean;
   isTrainingPaused: boolean;
   isTrainingPausing: boolean;
@@ -67,6 +73,9 @@ export const useSocket = (): UseSocketReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [trainingProgress, setTrainingProgress] =
     useState<TrainingProgress | null>(null);
+  const [trainingPhase, setTrainingPhase] = useState<TrainingPhase | null>(
+    null,
+  );
   const [isTrainingActive, setIsTrainingActive] = useState(false);
   const [isTrainingPaused, setIsTrainingPaused] = useState(false);
   const [isTrainingPausing, setIsTrainingPausing] = useState(false);
@@ -188,7 +197,38 @@ export const useSocket = (): UseSocketReturn => {
       setTrainingCompleted(null);
       setTrainingError(null);
       setTrainingProgress(null);
+      setTrainingPhase((prev) => {
+        if (prev?.stage && prev.stage !== "starting") {
+          return prev;
+        }
+        return {
+          message: data?.message || prev?.message || "Training request accepted",
+          stage: "starting",
+        };
+      });
       processedCompletedResultsRef.current = null; // Clear ref for new training
+    });
+
+    newSocket.on("training_accepted", (data: any) => {
+      if (data?.job_id) {
+        writeStoredJobId(data.job_id);
+      }
+      isTrainingActiveRef.current = true;
+      setIsTrainingActive(true);
+      setTrainingError(null);
+      setTrainingPhase({
+        message: data?.message || "Training request accepted",
+        stage: "starting",
+      });
+    });
+
+    newSocket.on("training_phase", (data: TrainingPhase) => {
+      if (data?.message) {
+        setTrainingPhase({
+          message: data.message,
+          stage: data.stage,
+        });
+      }
     });
 
     newSocket.on("epoch_started", (data: any) => {
@@ -210,6 +250,7 @@ export const useSocket = (): UseSocketReturn => {
       setIsTrainingPaused(false);
       setTrainingCompleted(data);
       setIsTrainingActive(false);
+      setTrainingPhase(null);
     });
 
     newSocket.on("training_error", (data: any) => {
@@ -219,6 +260,7 @@ export const useSocket = (): UseSocketReturn => {
       setIsTrainingPaused(false);
       setTrainingError(data.error);
       setIsTrainingActive(false);
+      setTrainingPhase(null);
     });
 
     // Handle training status check response
@@ -234,6 +276,12 @@ export const useSocket = (): UseSocketReturn => {
         setIsTrainingPausing(Boolean(data.is_paused) && !Boolean(data.pause_confirmed));
         if (data.current_progress) {
           setTrainingProgress(data.current_progress);
+        }
+        if (data.status_message) {
+          setTrainingPhase({
+            message: data.status_message,
+            stage: data.status_stage,
+          });
         }
       } else {
         isTrainingActiveRef.current = false;
@@ -285,6 +333,7 @@ export const useSocket = (): UseSocketReturn => {
       setIsTrainingPausing(false);
       setIsTrainingActive(false);
       setIsTrainingPaused(false);
+      setTrainingPhase(null);
     });
 
     return () => {
@@ -303,6 +352,11 @@ export const useSocket = (): UseSocketReturn => {
     }
 
     try {
+      setTrainingError(null);
+      setTrainingPhase({
+        message: "Sending training request...",
+        stage: "starting",
+      });
       const response = await fetch(API_CONFIG.getApiUrl("/train-stream"), {
         method: "POST",
         headers: {
@@ -333,6 +387,7 @@ export const useSocket = (): UseSocketReturn => {
       console.log("Training started:", result);
     } catch (error) {
       console.error("Failed to start training:", error);
+      setTrainingPhase(null);
       setTrainingError(
         error instanceof Error ? error.message : "Failed to start training",
       );
@@ -365,6 +420,7 @@ export const useSocket = (): UseSocketReturn => {
     setIsTrainingActive(false);
     setIsTrainingPaused(false);
     setIsTrainingPausing(false);
+    setTrainingPhase(null);
     processedCompletedResultsRef.current = null;
   };
 
@@ -383,6 +439,7 @@ export const useSocket = (): UseSocketReturn => {
     socket,
     isConnected,
     trainingProgress,
+    trainingPhase,
     isTrainingActive,
     isTrainingPaused,
     isTrainingPausing,

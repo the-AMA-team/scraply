@@ -4,6 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 import socketio
 from models import DynamicModel, Train
 from generate import Generate
+from params import (
+    dataset_label,
+    describe_dataset_load,
+    describe_dataset_ready,
+    get_dataloader,
+)
 import asyncio
 import uuid
 
@@ -98,6 +104,8 @@ def _job_status_payload(job):
             "job_id": None,
             "is_training": False,
             "current_progress": None,
+            "status_message": None,
+            "status_stage": None,
             "is_paused": False,
             "pause_confirmed": False,
             "completed_results": None,
@@ -106,6 +114,8 @@ def _job_status_payload(job):
         "job_id": job.get("job_id"),
         "is_training": job.get("is_training", False),
         "current_progress": job.get("current_progress"),
+        "status_message": job.get("status_message"),
+        "status_stage": job.get("status_stage"),
         "is_paused": job.get("is_paused", False),
         "pause_confirmed": job.get("pause_confirmed", False),
         "completed_results": job.get("completed_results"),
@@ -152,6 +162,8 @@ def _create_job(owner_sid: str) -> dict:
         "owner_sid": owner_sid,
         "is_training": True,
         "current_progress": None,
+        "status_message": None,
+        "status_stage": None,
         "is_paused": False,
         "pause_confirmed": False,
         "completed_results": None,
@@ -175,6 +187,15 @@ async def _emit_job(job, event, data, to=None):
         _log(f"Skipped emit {event}: no job room")
         return
     await sio.emit(event, payload, room=target)
+
+
+async def _set_job_phase(job, message: str, stage: str):
+    if not job:
+        return
+    job["status_message"] = message
+    job["status_stage"] = stage
+    _log(message, job_id=job.get("job_id"))
+    await _emit_job(job, "training_phase", {"message": message, "stage": stage})
 
 
 async def _drop_sid_job(sid: str, remove_job: bool = False):
@@ -239,6 +260,19 @@ async def _begin_training(sid: str, data: dict) -> dict:
     await sio.enter_room(sid, job["room"])
 
     try:
+        await _emit_job(
+            job,
+            "training_started",
+            {
+                "total_epochs": n_epochs,
+                "dataset": inp,
+                "message": "Training request accepted",
+            },
+        )
+        await _set_job_phase(job, describe_dataset_load(inp), "loading_dataset")
+        ds = await asyncio.to_thread(get_dataloader, inp)
+        await _set_job_phase(job, describe_dataset_ready(inp, ds), "setup")
+
         model = DynamicModel(layers)
         t = Train(
             model=model,
@@ -248,6 +282,11 @@ async def _begin_training(sid: str, data: dict) -> dict:
             batch_size=batch_size,
         )
 
+        await _set_job_phase(
+            job,
+            f"Starting training on {dataset_label(inp)}...",
+            "training",
+        )
         _log(
             f"Started training dataset={inp} epochs={n_epochs} "
             f"batch_size={batch_size} device={t.device}",

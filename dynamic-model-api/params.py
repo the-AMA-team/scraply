@@ -20,6 +20,60 @@ _PIMA_CSV = _DATA_DIR / "datasets" / "pima-indians-diabetes.csv"
 _IMAGE_TRANSFORM = transforms.Compose([transforms.ToTensor()])
 _DATASET_CACHE = {}
 
+DATASET_LABELS = {
+    "pima": "PIMA",
+    "MNIST": "MNIST",
+    "FashionMNIST": "Fashion-MNIST",
+    "CIFAR10": "CIFAR-10",
+}
+
+
+def dataset_label(name: str) -> str:
+    return DATASET_LABELS.get(name, name)
+
+
+def _image_dataset_on_disk(name: str) -> bool:
+    root = _TORCHVISION_ROOT
+    if name == "MNIST":
+        return (root / "MNIST" / "processed" / "training.pt").exists() or (
+            root / "MNIST" / "raw" / "train-images-idx3-ubyte.gz"
+        ).exists()
+    if name == "FashionMNIST":
+        return (root / "FashionMNIST" / "processed" / "training.pt").exists() or (
+            root / "FashionMNIST" / "raw" / "train-images-idx3-ubyte.gz"
+        ).exists()
+    if name == "CIFAR10":
+        return (root / "cifar-10-batches-py" / "data_batch_1").exists() or (
+            root / "cifar-10-python.tar.gz"
+        ).exists()
+    return False
+
+
+def describe_dataset_load(name: str) -> str:
+    label = dataset_label(name)
+    if name in _DATASET_CACHE:
+        return f"{label} is already loaded in memory"
+    if name == "pima":
+        return f"Loading {label} from disk..."
+    if _image_dataset_on_disk(name):
+        return f"Loading {label} from disk..."
+    if name == "CIFAR10":
+        return f"Downloading {label} (~170 MB). The first load can take a few minutes..."
+    return f"Downloading {label}. The first load can take a few minutes..."
+
+
+def describe_dataset_ready(name: str, ds) -> str:
+    label = dataset_label(name)
+    if name == "pima":
+        n = len(ds["X"])
+        return f"{label} loaded ({n:,} samples). Setting up the model..."
+    n_train = len(ds["train"])
+    n_test = len(ds["test"])
+    return (
+        f"{label} loaded ({n_train:,} train / {n_test:,} test). "
+        "Setting up the model..."
+    )
+
 
 def _load_image_dataset(dataset_cls):
     return {

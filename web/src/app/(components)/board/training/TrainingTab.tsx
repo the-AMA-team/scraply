@@ -28,11 +28,13 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
 
   // Store the training config that was used when training started
   const trainingConfigRef = useRef<Config | null>(null);
+  const hadSocketTrainingRef = useRef(false);
 
   // Socket for live training
   const {
     isConnected,
     trainingProgress,
+    trainingPhase,
     isTrainingActive,
     isTrainingPaused: socketTrainingPaused,
     isTrainingPausing,
@@ -113,11 +115,24 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     setIsTrainingPaused(socketTrainingPaused);
   }, [socketTrainingPaused, setIsTrainingPaused]);
 
-  // Handle training stop events - this is now redundant but kept for safety
-  // The main sync happens in the useEffect above
+  // Handle training stop events - only clear live UI after the socket
+  // actually started a job and then ended it. Otherwise the first-load
+  // wait (dataset download) looks like "training stopped".
   useEffect(() => {
-    if (!isTrainingActive && isLiveTraining && isConnected) {
-      // Training was stopped from backend
+    if (isTrainingActive) {
+      hadSocketTrainingRef.current = true;
+      setIsLiveTraining(true);
+    }
+  }, [isTrainingActive, setIsLiveTraining]);
+
+  useEffect(() => {
+    if (
+      hadSocketTrainingRef.current &&
+      !isTrainingActive &&
+      isLiveTraining &&
+      isConnected
+    ) {
+      hadSocketTrainingRef.current = false;
       setIsLiveTraining(false);
       setIsTraining(false);
       setIsTrainingPaused(false);
@@ -143,19 +158,6 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
       return () => clearTimeout(timer);
     }
   }, [isConnected, checkTrainingStatus]);
-
-  // Sync live training state with socket training state
-  useEffect(() => {
-    // If socket reports training is active, definitely set it to true
-    if (isTrainingActive) {
-      setIsLiveTraining(true);
-    }
-    // If socket says training is not active and we're connected, set to false
-    // Don't wait - this ensures buttons appear/disappear correctly
-    else if (!isTrainingActive && isConnected) {
-      setIsLiveTraining(false);
-    }
-  }, [isTrainingActive, isConnected, setIsLiveTraining]);
 
   // Handle training errors
   useEffect(() => {
@@ -213,6 +215,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
 
     setIsTraining(true);
     setIsLiveTraining(true); // Set live training state immediately
+    hadSocketTrainingRef.current = false;
     resetTraining(); // Reset any previous socket training state
 
     try {
@@ -249,6 +252,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
   const handleStopTraining = () => {
     stopTraining();
 
+    hadSocketTrainingRef.current = false;
     setIsTraining(false);
     setIsLiveTraining(false);
     setIsTrainingPaused(false);
@@ -467,8 +471,25 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                               ? "Pausing..."
                               : liveTrainingPaused
                                 ? "Training Paused"
-                                : "Training in Progress"}
+                                : currentProgress
+                                  ? "Training in Progress"
+                                  : trainingPhase?.stage === "loading_dataset"
+                                    ? "Loading Dataset"
+                                    : trainingPhase?.stage === "setup"
+                                      ? "Setting Up"
+                                      : "Starting Training"}
                           </span>
+                          {trainingPhase?.message ? (
+                            <div className="mt-0.5 text-xs font-medium text-blue-300/80">
+                              {trainingPhase.message}
+                            </div>
+                          ) : (
+                            !currentProgress && (
+                              <div className="mt-0.5 text-xs font-medium text-blue-300/80">
+                                Preparing your training run...
+                              </div>
+                            )
+                          )}
                           {currentProgress && (
                             <div className="mt-0.5 text-xs font-medium text-blue-300/80">
                               Epoch {currentProgress.epoch} of{" "}
@@ -493,6 +514,14 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                         </div>
                       )}
                     </div>
+
+                    {!currentProgress && (
+                      <div className="mb-1">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-blue-950/50 shadow-inner">
+                          <div className="h-full w-1/2 animate-pulse rounded-full bg-blue-500/80" />
+                        </div>
+                      </div>
+                    )}
 
                     {currentProgress && (
                       <>

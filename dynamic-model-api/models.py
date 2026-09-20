@@ -11,7 +11,14 @@ import cv2  # --> pip install opencv-python
 import time
 import asyncio
 import random
-from params import get_dataloader, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
+from params import (
+    get_dataloader,
+    dataset_label,
+    LAYERS,
+    ACTIVATIONS,
+    LOSSES,
+    OPTIMIZERS,
+)
 import os
 import copy
 import tempfile
@@ -688,12 +695,23 @@ class Train:
                 payload["job_id"] = job_id
             await socketio.emit(event, payload, room=room)
 
+        async def _phase(message: str, stage: str = "training"):
+            if active_training is not None:
+                active_training["status_message"] = message
+                active_training["status_stage"] = stage
+            _log(message)
+            await _emit("training_phase", {"message": message, "stage": stage})
+
         await _emit(
             "training_started",
             {
                 "total_epochs": n_epochs,
                 "dataset": self.input,
             },
+        )
+        await _phase(
+            f"Starting training on {dataset_label(self.input)}...",
+            "training",
         )
 
         async def _pause_state_notifier():
@@ -761,6 +779,10 @@ class Train:
             await _emit(
                 "epoch_started", {"epoch": t + 1, "total_epochs": n_epochs}
             )
+            await _phase(
+                f"Training epoch {t + 1} of {n_epochs}...",
+                "training",
+            )
             # emit is method to send events and data to clients via websocket
             avg_train_loss, train_avg_acc = await asyncio.to_thread(
                 self.train, n_epochs, batch_size, active_training
@@ -773,6 +795,10 @@ class Train:
                     pause_notifier_task.cancel()
                 return
 
+            await _phase(
+                f"Evaluating epoch {t + 1} on the test set...",
+                "evaluating",
+            )
             if t != n_epochs - 1 or self.input == "pima":
                 test_result = await asyncio.to_thread(
                     self.test, False, active_training
@@ -801,6 +827,10 @@ class Train:
 
                     # Process samples if available
                     if self.input != "pima":
+                        await _phase(
+                            "Preparing sample visualizations. This can take a moment...",
+                            "visualizations",
+                        )
                         _log("Processing random samples")
                         RANDOM_SAMPLES_ENCODED = self.process_image_samples(
                             random_samples,
@@ -867,6 +897,7 @@ class Train:
         avg_test_loss = sum(test_losses) / len(test_losses)
 
         _log("Training finished")
+        await _phase("Packaging results...", "finishing")
 
         if pause_notifier_task:
             pause_notifier_task.cancel()
