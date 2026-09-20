@@ -9,3 +9,5 @@ services:
       - .:/app  # optional: only if you want live reload on code changes
     environment:
       - PYTHONPATH=/app  # ensure Python can find the app module
+
+# railway does not use compose
