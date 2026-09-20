@@ -150,12 +150,13 @@ const TrainConfig: React.FC<{
       });
 
       console.log(data);
-      setResults(data.RESULTS);
+      const trainLoss: number[] = data.RESULTS.train_loss ?? [];
+      setResults({ train_loss: trainLoss });
       setGraphData([
         {
           id: "train_loss",
-          data: data.RESULTS.train_loss
-            .map((loss: number, i: number) => ({
+          data: trainLoss
+            .map((loss, i) => ({
               x: i,
               y: loss,
             }))
