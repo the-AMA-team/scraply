@@ -16,6 +16,13 @@ import os
 import copy
 import tempfile
 import numpy as np
+
+
+def _job_log(active_training, message: str):
+    job_id = (active_training or {}).get("job_id")
+    prefix = f"[job={str(job_id)[:8]}] " if job_id else ""
+    print(f"{prefix}{message}")
+
 from scipy.special import entr
 import base64
 
@@ -143,8 +150,6 @@ class Train:
             self.device = "mps"
         else:
             self.device = "cpu"
-
-        print(f"Using {self.device} device")
 
         # MOVE MODEL TO DEVICE
         self.model = model.to(self.device)
@@ -336,14 +341,13 @@ class Train:
             lowest_accuracy_classes_info = {
                 c: class_predictions[c] for c in lowest_classes
             }
-            print(f"\n3 lowest accuracy classes: {lowest_classes}")
-
-            print("\nGetting random predictions per class...")
+            _job_log(active_training, f"3 lowest accuracy classes: {lowest_classes}")
+            _job_log(active_training, "Collecting random predictions per class")
             random_samples = self.get_random_predictions_per_class(
                 class_predictions, num_samples=3
             )
 
-            print("Getting misclassified samples for lowest accuracy classes...")
+            _job_log(active_training, "Collecting misclassified samples")
             misclassified_samples = self.get_misclassified_samples(
                 lowest_accuracy_classes_info, num_samples=3
             )
@@ -667,13 +671,17 @@ class Train:
         job_id = (active_training or {}).get("job_id") or "default"
         sample_root = os.path.join(tempfile.gettempdir(), "scraply_jobs", str(job_id))
 
+        def _log(message: str):
+            prefix = f"[job={str(job_id)[:8]}] " if job_id and job_id != "default" else ""
+            print(f"{prefix}{message}")
+
         async def _emit(event, data):
             if dev_testing or socketio is None:
                 print(event, data)
                 return
             # Never broadcast: a missing room would send this job's events to every client
             if not room:
-                print(f"Skipping {event}: no job room (refusing global broadcast)")
+                _log(f"Skipped emit {event}: no job room")
                 return
             payload = dict(data) if isinstance(data, dict) else {"data": data}
             if job_id != "default":
@@ -696,13 +704,13 @@ class Train:
                 now = bool(active_training.get("pause_confirmed", False))
                 if now != last:
                     if now:
-                        print("⏸️  Training paused (confirmed)")
+                        _log("Training paused")
                         await _emit(
                             "training_paused",
                             {"message": "Training is paused"},
                         )
                     else:
-                        print("▶️  Training Resumed (confirmed)")
+                        _log("Training resumed")
                         await _emit(
                             "training_resumed",
                             {"message": "Training is running"},
@@ -721,7 +729,7 @@ class Train:
                 while active_training and active_training.get("is_paused", False):
                     
                     if not pause_printed:
-                        print("⏸️  Training is paused - waiting for resume...")
+                        _log("Training paused, waiting for resume")
                         # Confirm pause when we hit this wait loop (epoch boundary pause)
                         if active_training is not None:
                             active_training["pause_confirmed"] = True
@@ -730,7 +738,7 @@ class Train:
                     await asyncio.sleep(0.1)  # Sleep briefly to avoid busy waiting
                     if not active_training.get("is_training", False):
                         # Training was stopped while paused
-                        print("🛑 Training was stopped while paused")
+                        _log("Training stopped while paused")
                         await _emit(
                             "training_stopped", {"message": "Training stopped"}
                         )
@@ -742,7 +750,7 @@ class Train:
                     active_training["pause_confirmed"] = False
                 # Check if training was stopped
                 if not active_training or not active_training.get("is_training", False):
-                    print("🛑 Training stopped before epoch completion")
+                    _log("Training stopped before epoch completion")
                     await _emit(
                         "training_stopped", {"message": "Training stopped"}
                     )
@@ -750,7 +758,6 @@ class Train:
                         pause_notifier_task.cancel()
                     return
 
-            print(f"Epoch {t + 1}/{n_epochs}...")
             await _emit(
                 "epoch_started", {"epoch": t + 1, "total_epochs": n_epochs}
             )
@@ -765,10 +772,6 @@ class Train:
                 if pause_notifier_task:
                     pause_notifier_task.cancel()
                 return
-
-            print(
-                f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
-            )
 
             if t != n_epochs - 1 or self.input == "pima":
                 test_result = await asyncio.to_thread(
@@ -798,13 +801,13 @@ class Train:
 
                     # Process samples if available
                     if self.input != "pima":
-                        print("----------processing random samples-----------")
+                        _log("Processing random samples")
                         RANDOM_SAMPLES_ENCODED = self.process_image_samples(
                             random_samples,
                             sample_root,
                             dev_testing=dev_testing,
                         )
-                        print("----------processing misclassified samples-----------")
+                        _log("Processing misclassified samples")
                         MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
                             misclassified_samples,
                             os.path.join(sample_root, "lowest_accuracy_classes"),
@@ -826,8 +829,10 @@ class Train:
                     pause_notifier_task.cancel()
                 return
 
-            print(
-                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
+            _log(
+                f"epoch {t + 1}/{n_epochs}  "
+                f"train {avg_train_loss:.4f} ({train_avg_acc:.2f}%)  "
+                f"test {avg_test_loss:.4f} ({test_avg_acc:.2f}%)"
             )
 
             train_losses.append(avg_train_loss)
@@ -861,7 +866,7 @@ class Train:
         avg_train_loss = sum(train_losses) / len(train_losses)
         avg_test_loss = sum(test_losses) / len(test_losses)
 
-        print("Done!")
+        _log("Training finished")
 
         if pause_notifier_task:
             pause_notifier_task.cancel()

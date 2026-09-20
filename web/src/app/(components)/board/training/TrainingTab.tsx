@@ -402,7 +402,12 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                 </div>
                 <div>
                   <h3 className="text-xs font-medium text-red-200">
-                    {configError ? "Invalid Configuration" : "Training Failed"}
+                    {configError
+                      ? "Invalid Configuration"
+                      : typeof trainingError === "string" &&
+                          trainingError.toLowerCase().includes("too many users")
+                        ? "Server Busy"
+                        : "Training Failed"}
                   </h3>
                   <p className="mt-1 text-xs text-red-300">
                     {configError ||

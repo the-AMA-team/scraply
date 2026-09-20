@@ -11,6 +11,25 @@ import uuid
 IMAGE_EPOCHS_MAX = 5
 MAX_CONCURRENT_JOBS = 2
 JOB_TTL_SECONDS = 15 * 60
+BUSY_TRAINING_MESSAGE = (
+    "Too many users are training right now. Please try again in a moment."
+)
+
+
+def _short_id(value) -> str:
+    if not value:
+        return "-"
+    return str(value)[:8]
+
+
+def _log(message: str, job_id=None, sid=None):
+    parts = []
+    if job_id:
+        parts.append(f"job={_short_id(job_id)}")
+    if sid:
+        parts.append(f"sid={_short_id(sid)}")
+    prefix = f"[{' '.join(parts)}] " if parts else ""
+    print(f"{prefix}{message}")
 
 
 def _is_image_dataset(inp: str) -> bool:
@@ -121,7 +140,7 @@ def _schedule_job_expiry(job):
         owner = stored.get("owner_sid")
         if owner and sid_to_job.get(owner) == job_id:
             sid_to_job.pop(owner, None)
-        print(f"Expired job {job_id}")
+        _log("Expired finished job", job_id=job_id)
 
     job["expiry_task"] = asyncio.create_task(_expire())
 
@@ -153,7 +172,7 @@ async def _emit_job(job, event, data, to=None):
         payload.setdefault("job_id", job.get("job_id"))
         target = target or job.get("room")
     if not target:
-        print(f"Skipping {event}: no job room (refusing global broadcast)")
+        _log(f"Skipped emit {event}: no job room")
         return
     await sio.emit(event, payload, room=target)
 
@@ -183,15 +202,25 @@ async def _begin_training(sid: str, data: dict) -> dict:
 
     _, existing = _get_job_for_sid(sid)
     if existing and existing.get("is_training"):
+        _log(
+            "Rejected start: this session already has a running job",
+            job_id=existing.get("job_id"),
+            sid=sid,
+        )
         raise HTTPException(
             status_code=409,
             detail="A training job is already running for this session",
         )
 
     if _running_count() >= MAX_CONCURRENT_JOBS:
+        _log(
+            f"Rejected start: too many users training "
+            f"({_running_count()}/{MAX_CONCURRENT_JOBS} slots in use)",
+            sid=sid,
+        )
         raise HTTPException(
             status_code=429,
-            detail="Too many trainings in progress. Try again shortly.",
+            detail=BUSY_TRAINING_MESSAGE,
         )
 
     inp = data["input"]
@@ -219,7 +248,12 @@ async def _begin_training(sid: str, data: dict) -> dict:
             batch_size=batch_size,
         )
 
-        print("Model initialized successfully! Starting streaming training...")
+        _log(
+            f"Started training dataset={inp} epochs={n_epochs} "
+            f"batch_size={batch_size} device={t.device}",
+            job_id=job["job_id"],
+            sid=sid,
+        )
         job["task"] = asyncio.create_task(
             run_training_background(t, n_epochs, batch_size, job)
         )
@@ -228,7 +262,7 @@ async def _begin_training(sid: str, data: dict) -> dict:
         await _drop_sid_job(sid, remove_job=True)
         raise
     except Exception as e:
-        print("Error:", e)
+        _log(f"Failed to start training: {e}", job_id=job.get("job_id"), sid=sid)
         await _drop_sid_job(sid, remove_job=True)
         await _emit_job(None, "training_error", {"error": str(e)}, to=sid)
         raise HTTPException(status_code=500, detail=str(e))
@@ -265,7 +299,7 @@ async def generate(request: Request):
 
 @sio.event
 async def connect(sid, environ):
-    print("Client connected")
+    _log("Client connected", sid=sid)
     connected_clients.add(sid)
     await sio.emit("connected", {"message": "Connected to training server"}, room=sid)
 
@@ -279,7 +313,7 @@ async def stop_job_on_disconnect(job_id: str):
     owner = job.get("owner_sid")
     if owner in connected_clients and sid_to_job.get(owner) == job_id:
         return
-    print(f"No client for job {job_id} after 30 seconds - stopping training")
+    _log("Stopping training; client did not reconnect within 30s", job_id=job_id)
     job["is_training"] = False
     job["is_paused"] = False
     job["pause_confirmed"] = False
@@ -293,6 +327,7 @@ async def join_job(sid, data):
     job_id = (data or {}).get("job_id")
     job = jobs.get(job_id) if job_id else None
     if not job:
+        _log("Join failed: job not found", job_id=job_id, sid=sid)
         await sio.emit("job_not_found", {"job_id": job_id}, room=sid)
         return
 
@@ -305,6 +340,7 @@ async def join_job(sid, data):
         except Exception:
             pass
 
+    _log("Client rejoined job", job_id=job_id, sid=sid)
     job["owner_sid"] = sid
     sid_to_job[sid] = job_id
     await sio.enter_room(sid, job["room"])
@@ -317,25 +353,24 @@ async def join_job(sid, data):
 @sio.event
 async def tab_hidden(sid):
     """Client tab became hidden (switched tabs or minimized)."""
-    print("Client tab hidden")
     _, job = _get_job_for_sid(sid)
+    _log("Client tab hidden", job_id=job.get("job_id") if job else None, sid=sid)
     _cancel_job_timer(job)
 
 
 @sio.event
 async def tab_visible(sid):
     """Client tab became visible again."""
-    print("Client tab visible")
     _, job = _get_job_for_sid(sid)
+    _log("Client tab visible", job_id=job.get("job_id") if job else None, sid=sid)
     _cancel_job_timer(job)
 
 
 @sio.event
 async def disconnect(sid):
-    print("Client disconnected")
-    connected_clients.discard(sid)
-
     job_id, job = _get_job_for_sid(sid)
+    _log("Client disconnected", job_id=job_id, sid=sid)
+    connected_clients.discard(sid)
     if sid_to_job.get(sid) == job_id:
         sid_to_job.pop(sid, None)
 
@@ -359,10 +394,10 @@ async def pause_training(sid):
     if job and job.get("is_training"):
         job["is_paused"] = True
         job["pause_confirmed"] = False
-        print("Pause Requested")
+        _log("Pause requested", job_id=job.get("job_id"), sid=sid)
         await _emit_job(job, "training_pausing", {"message": "Pausing training..."})
     else:
-        print("⚠️  Warning: Attempted to pause training but no training is active")
+        _log("Pause ignored: no active training", sid=sid)
         await sio.emit(
             "training_error", {"error": "No active training to pause"}, room=sid
         )
@@ -374,10 +409,10 @@ async def resume_training(sid):
     if job and job.get("is_training") and job.get("is_paused"):
         job["is_paused"] = False
         job["pause_confirmed"] = False
-        print("▶️ Resume Requested (waiting for loop to resume)")
+        _log("Resume requested", job_id=job.get("job_id"), sid=sid)
         await _emit_job(job, "training_resuming", {"message": "Resuming training..."})
     else:
-        print("⚠️  Warning: Attempted to resume training but training is not paused")
+        _log("Resume ignored: training is not paused", sid=sid)
         await sio.emit(
             "training_error", {"error": "No paused training to resume"}, room=sid
         )
@@ -394,11 +429,10 @@ async def stop_training(sid):
         job["completed_results"] = None
         _cancel_job_timer(job)
         _schedule_job_expiry(job)
-        print("")
-        print("🛑 Training Stopped")
+        _log("Stop requested", job_id=job.get("job_id"), sid=sid)
         await _emit_job(job, "training_stopped", {"message": "Training has been stopped"})
     else:
-        print("⚠️  Warning: Attempted to stop training but no training is active")
+        _log("Stop ignored: no active training", sid=sid)
         await sio.emit(
             "training_error", {"error": "No active training to stop"}, room=sid
         )
@@ -437,8 +471,9 @@ async def run_training_background(t, n_epochs, batch_size, job):
         }
         _cancel_job_timer(job)
         _schedule_job_expiry(job)
+        _log("Training completed", job_id=job.get("job_id"))
     except Exception as e:
-        print("Background training error:", e)
+        _log(f"Training failed: {e}", job_id=job.get("job_id"))
         job["is_training"] = False
         job["current_progress"] = None
         job["is_paused"] = False
@@ -453,7 +488,8 @@ async def run_training_background(t, n_epochs, batch_size, job):
 async def train_stream(request: Request):
     """Streaming training endpoint that emits progress via WebSocket."""
     data = await request.json()
-    print("Received streaming training request:", data)
+    dataset = data.get("input")
+    _log(f"Received training request dataset={dataset}", sid=data.get("socket_id"))
 
     socket_id = data.get("socket_id")
     if not socket_id:
