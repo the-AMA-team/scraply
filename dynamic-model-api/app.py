@@ -66,7 +66,7 @@ app.add_middleware(
 
 # SocketIO setup
 sio = socketio.AsyncServer(
-    cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app"],
+    cors_allowed_origins=["http://localhost:3000", "https://scraply-prod.vercel.app", "https://scraply-five.vercel.app"],
     async_mode="asgi",
 )
 socket_app = socketio.ASGIApp(sio, app)

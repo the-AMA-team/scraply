@@ -298,7 +298,7 @@ export const useSocket = (): UseSocketReturn => {
   const startTraining = async (config: any) => {
     const socket = socketRef.current;
     if (!socket?.connected || !socket.id) {
-      setTrainingError("Not connected to training server");
+      setTrainingError("Not connected to training server. Try clicking the button again in 15-20 seconds");
       return;
     }
 
