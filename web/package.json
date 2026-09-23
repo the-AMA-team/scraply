@@ -3,15 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "main.cjs",
   "scripts": {
     "build": "next build",
+    "build-electron": "next build && node fix-paths.js",
     "check": "next lint && tsc --noEmit",
     "dev": "next dev --turbo",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "preview": "next build && next start",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "dist": "npm run build-electron && electron-builder --publish=never"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -27,8 +32,8 @@
     "react-dom": "^18.3.1",
     "react-icons": "^5.5.0",
     "react-syntax-highlighter": "^15.6.1",
-    "socket.io-client": "^4.8.1",
-    "zustand": "^5.0.5"
+    "zustand": "^5.0.5",
+    "python-shell": "^5.0.0"
   },
   "devDependencies": {
     "@types/eslint": "^8.56.10",
@@ -38,16 +43,55 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@typescript-eslint/eslint-plugin": "^8.1.0",
     "@typescript-eslint/parser": "^8.1.0",
+    "concurrently": "^9.2.1",
+    "electron": "^25.9.8",
+    "electron-builder": "^26.0.12",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.5.24",
     "postcss": "^8.4.39",
     "prettier": "^3.3.2",
     "prettier-plugin-tailwindcss": "^0.6.5",
     "tailwindcss": "^3.4.3",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "wait-on": "^9.0.0"
   },
   "ct3aMetadata": {
     "initVersion": "7.38.1"
   },
-  "packageManager": "npm@10.8.2"
+  "packageManager": "npm@10.8.2",
+  "build": {
+    "appId": "com.scraply.desktop",
+    "productName": "Scraply",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "out/**/*",
+      "electron/python-scripts/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "public/favicon.png"
+    ],
+    "asarUnpack": [
+      "electron/python-scripts/**"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": "dmg",
+      "icon": "public/favicon.png",
+      "signIgnore": [
+        ".*app\\.asar\\.unpacked/electron/python-scripts/data/.*"
+      ]
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/favicon.png"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "public/favicon.png"
+    }
+  }
 }

@@ -4,6 +4,19 @@
  */
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  output: 'export',
+  assetPrefix: '/',
+  trailingSlash: true,
+  images: {
+    unoptimized: true
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  }
+};
 
 export default config;

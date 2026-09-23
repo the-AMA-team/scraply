@@ -357,7 +357,14 @@ export const LENET_DATASET_CONFIGS: Record<string, UILayer[]> = {
       id: `conv-${Date.now()}-1`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 1, outputNeurons: 6, dimension: 2 as 2, kernelSize: 5, stride: 1, padding: 0 },
+      params: {
+        inputNeurons: 1,
+        outputNeurons: 6,
+        dimension: 2 as 2,
+        kernelSize: 5,
+        stride: 1,
+        padding: 0,
+      },
     },
     {
       id: `avgpool-${Date.now()}-1`,
@@ -368,7 +375,14 @@ export const LENET_DATASET_CONFIGS: Record<string, UILayer[]> = {
       id: `conv-${Date.now()}-2`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 6, outputNeurons: 16, dimension: 2 as 2, kernelSize: 5, stride: 1, padding: 0 },
+      params: {
+        inputNeurons: 6,
+        outputNeurons: 16,
+        dimension: 2 as 2,
+        kernelSize: 5,
+        stride: 1,
+        padding: 0,
+      },
     },
     {
       id: `avgpool-${Date.now()}-2`,
@@ -409,7 +423,14 @@ export const LENET_DATASET_CONFIGS: Record<string, UILayer[]> = {
       id: `conv-${Date.now()}-1`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 1, outputNeurons: 6, dimension: 2 as 2, kernelSize: 5, stride: 1, padding: 0 },
+      params: {
+        inputNeurons: 1,
+        outputNeurons: 6,
+        dimension: 2 as 2,
+        kernelSize: 5,
+        stride: 1,
+        padding: 0,
+      },
     },
     {
       id: `avgpool-${Date.now()}-1`,
@@ -420,7 +441,14 @@ export const LENET_DATASET_CONFIGS: Record<string, UILayer[]> = {
       id: `conv-${Date.now()}-2`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 6, outputNeurons: 16, dimension: 2 as 2, kernelSize: 5, stride: 1, padding: 0 },
+      params: {
+        inputNeurons: 6,
+        outputNeurons: 16,
+        dimension: 2 as 2,
+        kernelSize: 5,
+        stride: 1,
+        padding: 0,
+      },
     },
     {
       id: `avgpool-${Date.now()}-2`,
@@ -460,7 +488,14 @@ export const LENET_DATASET_CONFIGS: Record<string, UILayer[]> = {
       id: `conv-${Date.now()}-1`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 3, outputNeurons: 16, dimension: 2 as 2, kernelSize: 5, stride: 1, padding: 0 },
+      params: {
+        inputNeurons: 3,
+        outputNeurons: 16,
+        dimension: 2 as 2,
+        kernelSize: 5,
+        stride: 1,
+        padding: 0,
+      },
     },
     {
       id: `avgpool-${Date.now()}-1`,
@@ -471,7 +506,14 @@ export const LENET_DATASET_CONFIGS: Record<string, UILayer[]> = {
       id: `conv-${Date.now()}-2`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 16, outputNeurons: 32, dimension: 2 as 2, kernelSize: 5, stride: 1, padding: 0 },
+      params: {
+        inputNeurons: 16,
+        outputNeurons: 32,
+        dimension: 2 as 2,
+        kernelSize: 5,
+        stride: 1,
+        padding: 0,
+      },
     },
     {
       id: `avgpool-${Date.now()}-2`,
@@ -516,46 +558,95 @@ export const RESNET_DATASET_CONFIGS: Record<string, UILayer[]> = {
       id: `conv-${Date.now()}-1`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 1, outputNeurons: 64, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 1,
+        outputNeurons: 64,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     // Res block stage 1 (2 convs)
     {
       id: `conv-${Date.now()}-2`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 64, outputNeurons: 64, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 64,
+        outputNeurons: 64,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-3`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 64, outputNeurons: 64, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 64,
+        outputNeurons: 64,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     // Downsample stage (simulate stride-2 res block start)
     {
       id: `conv-${Date.now()}-4`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 64, outputNeurons: 128, dimension: 2 as 2, kernelSize: 3, stride: 2, padding: 1 },
+      params: {
+        inputNeurons: 64,
+        outputNeurons: 128,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 2,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-5`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 128, outputNeurons: 128, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 128,
+        outputNeurons: 128,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     // Further downsampling
     {
       id: `conv-${Date.now()}-6`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 128, outputNeurons: 256, dimension: 2 as 2, kernelSize: 3, stride: 2, padding: 1 },
+      params: {
+        inputNeurons: 128,
+        outputNeurons: 256,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 2,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-7`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 256, outputNeurons: 256, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 256,
+        outputNeurons: 256,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     // Final flatten (spatial size is 7x7 after two stride-2 downsamples)
     {
@@ -590,37 +681,79 @@ export const RESNET_DATASET_CONFIGS: Record<string, UILayer[]> = {
       id: `conv-${Date.now()}-1`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 1, outputNeurons: 64, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 1,
+        outputNeurons: 64,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-2`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 64, outputNeurons: 64, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 64,
+        outputNeurons: 64,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-3`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 64, outputNeurons: 128, dimension: 2 as 2, kernelSize: 3, stride: 2, padding: 1 },
+      params: {
+        inputNeurons: 64,
+        outputNeurons: 128,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 2,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-4`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 128, outputNeurons: 128, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 128,
+        outputNeurons: 128,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-5`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 128, outputNeurons: 256, dimension: 2 as 2, kernelSize: 3, stride: 2, padding: 1 },
+      params: {
+        inputNeurons: 128,
+        outputNeurons: 256,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 2,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-6`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 256, outputNeurons: 256, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 256,
+        outputNeurons: 256,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     {
       id: `flatten-${Date.now()}`,
@@ -654,53 +787,109 @@ export const RESNET_DATASET_CONFIGS: Record<string, UILayer[]> = {
       id: `conv-${Date.now()}-1`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 3, outputNeurons: 64, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 3,
+        outputNeurons: 64,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     // stage 1
     {
       id: `conv-${Date.now()}-2`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 64, outputNeurons: 64, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 64,
+        outputNeurons: 64,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-3`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 64, outputNeurons: 128, dimension: 2 as 2, kernelSize: 3, stride: 2, padding: 1 },
+      params: {
+        inputNeurons: 64,
+        outputNeurons: 128,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 2,
+        padding: 1,
+      },
     } as const,
     // stage 2
     {
       id: `conv-${Date.now()}-4`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 128, outputNeurons: 128, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 128,
+        outputNeurons: 128,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-5`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 128, outputNeurons: 256, dimension: 2 as 2, kernelSize: 3, stride: 2, padding: 1 },
+      params: {
+        inputNeurons: 128,
+        outputNeurons: 256,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 2,
+        padding: 1,
+      },
     } as const,
     // stage 3
     {
       id: `conv-${Date.now()}-6`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 256, outputNeurons: 256, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 256,
+        outputNeurons: 256,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     {
       id: `conv-${Date.now()}-7`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 256, outputNeurons: 512, dimension: 2 as 2, kernelSize: 3, stride: 2, padding: 1 },
+      params: {
+        inputNeurons: 256,
+        outputNeurons: 512,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 2,
+        padding: 1,
+      },
     } as const,
     // final stage conv
     {
       id: `conv-${Date.now()}-8`,
       ...getBlockMeta("Conv"),
       activationFunction: "ReLU",
-      params: { inputNeurons: 512, outputNeurons: 512, dimension: 2 as 2, kernelSize: 3, stride: 1, padding: 1 },
+      params: {
+        inputNeurons: 512,
+        outputNeurons: 512,
+        dimension: 2 as 2,
+        kernelSize: 3,
+        stride: 1,
+        padding: 1,
+      },
     } as const,
     // final flatten (spatial size is 4x4 after stride-2 downsamples)
     {
@@ -756,6 +945,15 @@ export const generateLeNetBlocks = (datasetName: string): UILayer[] => {
   return withFreshIds(baseConfig);
 };
 
+// Dataset-wise architecture availability mapping
+export const DATASET_ARCHITECTURES: Record<string, string[]> = {
+  pima: ["custom", "default"],
+  MNIST: ["custom", "default", "lenet", "resnet"],
+  FashionMNIST: ["custom", "default", "lenet", "resnet"],
+  CIFAR10: ["custom", "default", "lenet", "resnet"],
+};
 
-
-
+// Helper function to get available architectures for a dataset
+export const getAvailableArchitectures = (datasetName: string): string[] => {
+  return DATASET_ARCHITECTURES[datasetName] || ["custom", "default"];
+};

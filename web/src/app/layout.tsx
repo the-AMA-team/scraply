@@ -8,7 +8,7 @@ import { Providers } from "./providers";
 export const metadata: Metadata = {
   title: "scraply",
   description: "",
-  icons: [{ rel: "icon", url: "/favicon.png" }],
+  icons: [{ rel: "icon", url: "favicon.png" }],
 };
 
 export default function RootLayout({

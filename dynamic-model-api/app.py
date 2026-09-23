@@ -544,3 +544,7 @@ async def train_stream(request: Request):
 
 # Export the ASGI app for uvicorn
 asgi_app = socket_app
+
+
+# command to run this file:
+# uvicorn app:socket_app --host 0.0.0.0 --port 5000 --reload

@@ -11,6 +11,7 @@ import {
   generateUniqueBlocks,
   generateLeNetBlocks,
   generateResNetBlocks,
+  getAvailableArchitectures,
 } from "~/util/defaultConfigs";
 
 const Board = () => {
@@ -43,7 +44,16 @@ const Board = () => {
     };
   }, [dropdownOpen]);
 
+  // Get available architectures for the current dataset
+  const availableArchitectures = getAvailableArchitectures(selectedDataset);
+
   useEffect(() => {
+    // If current architecture is not available for this dataset, reset to the first available one
+    if (!availableArchitectures.includes(selectedArchitecture)) {
+      setSelectedArchitecture(availableArchitectures[0] || "custom");
+      return;
+    }
+
     // When architecture changes, load or clear config
     if (selectedArchitecture === "custom") {
       clearCanvas();
@@ -57,7 +67,7 @@ const Board = () => {
       loadDefaultConfig(defaultBlocks);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedArchitecture, selectedDataset]);
+  }, [selectedArchitecture, selectedDataset, availableArchitectures]);
 
   const Tabs: Record<AppTabs, React.ReactNode> = {
     [AppTabs.LAYERS]: <LayersTab />,
@@ -120,6 +130,22 @@ const Board = () => {
                               onClick={() => {
                                 setSelectedDataset(dataset.inputName);
                                 setDropdownOpen(false);
+
+                                // Check if current architecture is available for the new dataset
+                                const newDatasetArchitectures =
+                                  getAvailableArchitectures(dataset.inputName);
+                                if (
+                                  !newDatasetArchitectures.includes(
+                                    selectedArchitecture,
+                                  )
+                                ) {
+                                  setSelectedArchitecture(
+                                    newDatasetArchitectures[0] || "custom",
+                                  );
+                                  clearCanvas();
+                                  return;
+                                }
+
                                 if (selectedArchitecture === "custom") {
                                   clearCanvas();
                                 } else {
@@ -160,10 +186,11 @@ const Board = () => {
                 value={selectedArchitecture}
                 onChange={(e) => setSelectedArchitecture(e.target.value)}
               >
-                <option value="custom">Custom</option>
-                <option value="default">Default</option>
-                <option value="lenet">LeNet</option>
-                <option value="resnet">ResNet</option>
+                {availableArchitectures.map((arch) => (
+                  <option key={arch} value={arch}>
+                    {arch.charAt(0).toUpperCase() + arch.slice(1)}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

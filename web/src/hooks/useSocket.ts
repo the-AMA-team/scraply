@@ -68,8 +68,7 @@ interface UseSocketReturn {
   checkTrainingStatus: () => void;
 }
 
-export const useSocket = (): UseSocketReturn => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+export const useSocket = (): UseElectronReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [trainingProgress, setTrainingProgress] =
     useState<TrainingProgress | null>(null);
@@ -342,7 +341,7 @@ export const useSocket = (): UseSocketReturn => {
       window.removeEventListener("pagehide", handlePageHide);
       newSocket.close();
     };
-  }, []);
+  }, [isTrainingActive]);
 
   const startTraining = async (config: any) => {
     const socket = socketRef.current;
@@ -391,24 +390,37 @@ export const useSocket = (): UseSocketReturn => {
       setTrainingError(
         error instanceof Error ? error.message : "Failed to start training",
       );
+      setIsTrainingActive(false);
     }
   };
 
-  const pauseTraining = () => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("pause_training");
+  const pauseTraining = async () => {
+    try {
+      if (typeof window !== "undefined" && window.electronAPI) {
+        await window.electronAPI.pauseTraining();
+      }
+    } catch (error) {
+      console.error("Failed to pause training:", error);
     }
   };
 
-  const resumeTraining = () => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("resume_training");
+  const resumeTraining = async () => {
+    try {
+      if (typeof window !== "undefined" && window.electronAPI) {
+        await window.electronAPI.resumeTraining();
+      }
+    } catch (error) {
+      console.error("Failed to resume training:", error);
     }
   };
 
-  const stopTraining = () => {
-    if (socketRef.current?.connected) {
-      socketRef.current.emit("stop_training");
+  const stopTraining = async () => {
+    try {
+      if (typeof window !== "undefined" && window.electronAPI) {
+        await window.electronAPI.stopTraining();
+      }
+    } catch (error) {
+      console.error("Failed to stop training:", error);
     }
   };
 
@@ -436,7 +448,6 @@ export const useSocket = (): UseSocketReturn => {
   };
 
   return {
-    socket,
     isConnected,
     trainingProgress,
     trainingPhase,

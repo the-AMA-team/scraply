@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Config, TransformerConfig } from "~/types/index";
 import { API_CONFIG } from "~/util/config";
 
-// API functions
+// Electron API functions
 const downloadFile = async (config: Config): Promise<Blob> => {
   const response = await fetch(API_CONFIG.getApiUrl("/generate"), {
     method: "POST",
@@ -18,8 +18,6 @@ const downloadFile = async (config: Config): Promise<Blob> => {
       `Download failed: ${response.status} ${response.statusText}`,
     );
   }
-
-  return response.blob();
 };
 
 const startTraining = async (config: Config) => {
@@ -37,8 +35,6 @@ const startTraining = async (config: Config) => {
       `Training failed: ${response.status} ${response.statusText}`,
     );
   }
-
-  return response.json();
 };
 
 const startTransformerTraining = async (config: TransformerConfig) => {
@@ -59,8 +55,6 @@ const startTransformerTraining = async (config: TransformerConfig) => {
       `Transformer training failed: ${response.status} ${response.statusText}`,
     );
   }
-
-  return response.json();
 };
 
 const transformerTest = async (params: {
@@ -84,8 +78,6 @@ const transformerTest = async (params: {
       `Transformer test failed: ${response.status} ${response.statusText}`,
     );
   }
-
-  return response.json();
 };
 
 const checkServerHealth = async () => {
@@ -102,8 +94,6 @@ const checkServerHealth = async () => {
       `Health check failed: ${response.status} ${response.statusText}`,
     );
   }
-
-  return response.json();
 };
 
 // hooks
