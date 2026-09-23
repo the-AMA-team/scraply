@@ -1,7 +1,0 @@
-Deployment completed: Fri, Aug 15, 2025 12:56:43 AM
-Stack Name: scraply-ml-api-stack
-Instance ID: i-0de4b8aab40a3dcb3
-Public IP: 34.225.79.246
-Public DNS: ec2-34-225-79-246.compute-1.amazonaws.com
-Flask App URL: http://34.225.79.246:5000
-SSH Command: ssh -i ~/.ssh/scraply-deployment-key-new.pem ubuntu@34.225.79.246

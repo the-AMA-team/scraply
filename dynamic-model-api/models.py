@@ -9,10 +9,27 @@ from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 from collections import Counter, defaultdict
 import cv2  # --> pip install opencv-python
 import time
+import asyncio
 import random
-from params import DATALOADERS, LAYERS, ACTIVATIONS, LOSSES, OPTIMIZERS
+from params import (
+    get_dataloader,
+    dataset_label,
+    LAYERS,
+    ACTIVATIONS,
+    LOSSES,
+    OPTIMIZERS,
+)
 import os
+import copy
+import tempfile
 import numpy as np
+
+
+def _job_log(active_training, message: str):
+    job_id = (active_training or {}).get("job_id")
+    prefix = f"[job={str(job_id)[:8]}] " if job_id else ""
+    print(f"{prefix}{message}")
+
 from scipy.special import entr
 import base64
 
@@ -90,7 +107,8 @@ class DynamicModel(nn.Module):
                     print(f"Layer {layer_type} not recognized or not implemented.")
 
             elif layer_type in ACTIVATIONS.keys():
-                component = ACTIVATIONS[layer_type]
+                # Copy so concurrent jobs do not share one Module instance
+                component = copy.deepcopy(ACTIVATIONS[layer_type])
 
             else:
                 print("Invalid layer type")
@@ -131,7 +149,7 @@ class Train:
         self.model = model
         self.input = input
         self.num_classes = 0
-        ds = DATALOADERS[input]
+        ds = get_dataloader(input)
 
         if torch.cuda.is_available():
             self.device = "cuda"
@@ -139,8 +157,6 @@ class Train:
             self.device = "mps"
         else:
             self.device = "cpu"
-
-        print(f"Using {self.device} device")
 
         # MOVE MODEL TO DEVICE
         self.model = model.to(self.device)
@@ -186,20 +202,42 @@ class Train:
                 test_set, batch_size=batch_size, shuffle=False
             )
 
-        self.loss_fn = LOSSES[loss]
+        self.loss_fn = copy.deepcopy(LOSSES[loss])
         self.optimizer = OPTIMIZERS[optimizer["kind"]](
             self.model.parameters(), optimizer["lr"]
         )
         self.final_loss = -1
 
-    def train(self, n_epochs, batch_size):
+    def train(self, n_epochs, batch_size, active_training=None):
         self.model.feature_save = False  # set the feature_save flag to false
         self.model.train()
         train_loss = 0
         correct = 0
         total = 0
+        processed_batches = 0
 
         for batch, (X, y) in enumerate(self.train_loader):
+            # Allow pause/stop mid-epoch (important for slower datasets like MNIST/CIFAR)
+            if active_training is not None:
+                # Stop requested
+                if not active_training.get("is_training", True):
+                    break
+                # Pause requested
+                while active_training.get("is_paused", False):
+                    # Mark pause as confirmed once we actually enter the wait loop
+                    if not active_training.get("pause_confirmed", False):
+                        active_training["pause_confirmed"] = True
+                    time.sleep(0.1)
+                    if not active_training.get("is_training", True):
+                        break
+                # Clear confirmation once we're out of the pause loop
+                if active_training.get("pause_confirmed", False) and not active_training.get(
+                    "is_paused", False
+                ):
+                    active_training["pause_confirmed"] = False
+                if not active_training.get("is_training", True):
+                    break
+
             X, y = X.to(self.device), y.to(self.device)
             # Compute prediction error
             pred = self.model(X)
@@ -209,6 +247,7 @@ class Train:
             self.optimizer.step()
             self.optimizer.zero_grad()
             train_loss += loss.item()
+            processed_batches += 1
 
             if self.input == "pima":
                 threshold = 0.5
@@ -220,22 +259,44 @@ class Train:
             total += y.size(0)
 
         # avg over all batches
-        avg_train_loss = train_loss / len(self.train_loader)
+        if processed_batches == 0 or total == 0:
+            return 0.0, 0.0
+
+        avg_train_loss = train_loss / processed_batches
         avg_acc = 100 * correct / total
         return avg_train_loss, avg_acc
 
-    def test(self, output_info=False):
+    def test(self, output_info=False, active_training=None):
         self.model.feature_save = False
         self.model.eval()  # set model to eval mode
 
         all_predictions, all_labels, all_indices = [], [], []
         test_loss, correct, total = 0, 0, 0
+        processed_batches = 0
 
         with torch.no_grad():
             for idx, (X, y) in enumerate(self.test_loader):
+                # Allow pause/stop mid-eval as well (so "Stop" works immediately)
+                if active_training is not None:
+                    if not active_training.get("is_training", True):
+                        break
+                    while active_training.get("is_paused", False):
+                        if not active_training.get("pause_confirmed", False):
+                            active_training["pause_confirmed"] = True
+                        time.sleep(0.1)
+                        if not active_training.get("is_training", True):
+                            break
+                    if active_training.get("pause_confirmed", False) and not active_training.get(
+                        "is_paused", False
+                    ):
+                        active_training["pause_confirmed"] = False
+                    if not active_training.get("is_training", True):
+                        break
+
                 X, y = X.to(self.device), y.to(self.device)
                 pred = self.model(X)
                 test_loss += self.loss_fn(pred, y).item()
+                processed_batches += 1
 
                 if self.input == "pima":
                     threshold = 0.5
@@ -287,21 +348,24 @@ class Train:
             lowest_accuracy_classes_info = {
                 c: class_predictions[c] for c in lowest_classes
             }
-            print(f"\n3 lowest accuracy classes: {lowest_classes}")
-
-            print("\nGetting random predictions per class...")
+            _job_log(active_training, f"3 lowest accuracy classes: {lowest_classes}")
+            _job_log(active_training, "Collecting random predictions per class")
             random_samples = self.get_random_predictions_per_class(
                 class_predictions, num_samples=3
             )
 
-            print("Getting misclassified samples for lowest accuracy classes...")
+            _job_log(active_training, "Collecting misclassified samples")
             misclassified_samples = self.get_misclassified_samples(
                 lowest_accuracy_classes_info, num_samples=3
             )
 
         # returning test loss here :)
-        avg_test_loss = test_loss / len(self.test_loader)
-        avg_acc = 100 * correct / total
+        if processed_batches == 0 or total == 0:
+            avg_test_loss = 0.0
+            avg_acc = 0.0
+        else:
+            avg_test_loss = test_loss / processed_batches
+            avg_acc = 100 * correct / total
 
         if output_info and self.input != "pima":
             return (
@@ -597,6 +661,7 @@ class Train:
         socketio=None,
         active_training=None,
         dev_testing=False,
+        room=None,
     ):
         """Async version of train_test_log_stream for use with ASGI servers"""
         # intended for default to support streaming. however, socketio object and active_training must be passed in. they optional for dev_testing
@@ -610,46 +675,134 @@ class Train:
 
         RANDOM_SAMPLES_ENCODED = {}
         MISCLASSIFIED_SAMPLES_ENCODED = {}
+        job_id = (active_training or {}).get("job_id") or "default"
+        sample_root = os.path.join(tempfile.gettempdir(), "scraply_jobs", str(job_id))
 
-        if dev_testing:
-            print("training_started", {"total_epochs": n_epochs, "dataset": self.input})
-        else:
-            await socketio.emit(
-                "training_started", {"total_epochs": n_epochs, "dataset": self.input}
-            )
+        def _log(message: str):
+            prefix = f"[job={str(job_id)[:8]}] " if job_id and job_id != "default" else ""
+            print(f"{prefix}{message}")
+
+        async def _emit(event, data):
+            if dev_testing or socketio is None:
+                print(event, data)
+                return
+            # Never broadcast: a missing room would send this job's events to every client
+            if not room:
+                _log(f"Skipped emit {event}: no job room")
+                return
+            payload = dict(data) if isinstance(data, dict) else {"data": data}
+            if job_id != "default":
+                payload["job_id"] = job_id
+            await socketio.emit(event, payload, room=room)
+
+        async def _phase(message: str, stage: str = "training"):
+            if active_training is not None:
+                active_training["status_message"] = message
+                active_training["status_stage"] = stage
+            _log(message)
+            await _emit("training_phase", {"message": message, "stage": stage})
+
+        await _emit(
+            "training_started",
+            {
+                "total_epochs": n_epochs,
+                "dataset": self.input,
+            },
+        )
+        await _phase(
+            f"Starting training on {dataset_label(self.input)}...",
+            "training",
+        )
+
+        async def _pause_state_notifier():
+            """Emit pause/resume only when loop is actually paused/resumed."""
+            # Initialize to current state to avoid emitting 'resumed' at start
+            last = bool(active_training.get("pause_confirmed", False)) if active_training else False
+            while active_training and active_training.get("is_training", False):
+                now = bool(active_training.get("pause_confirmed", False))
+                if now != last:
+                    if now:
+                        _log("Training paused")
+                        await _emit(
+                            "training_paused",
+                            {"message": "Training is paused"},
+                        )
+                    else:
+                        _log("Training resumed")
+                        await _emit(
+                            "training_resumed",
+                            {"message": "Training is running"},
+                        )
+                    last = now
+                await asyncio.sleep(0.1)
+
+        pause_notifier_task = None
+        if not dev_testing and socketio is not None and active_training is not None:
+            pause_notifier_task = asyncio.create_task(_pause_state_notifier())
 
         for t in range(n_epochs):
             # Check for pause before starting epoch
             if dev_testing == False:
+                pause_printed = False
                 while active_training and active_training.get("is_paused", False):
-                    import asyncio
+                    
+                    if not pause_printed:
+                        _log("Training paused, waiting for resume")
+                        # Confirm pause when we hit this wait loop (epoch boundary pause)
+                        if active_training is not None:
+                            active_training["pause_confirmed"] = True
+                        pause_printed = True
 
                     await asyncio.sleep(0.1)  # Sleep briefly to avoid busy waiting
                     if not active_training.get("is_training", False):
                         # Training was stopped while paused
-                        await socketio.emit(
+                        _log("Training stopped while paused")
+                        await _emit(
                             "training_stopped", {"message": "Training stopped"}
                         )
+                        if pause_notifier_task:
+                            pause_notifier_task.cancel()
                         return
+                # If we exited pause loop, clear confirmation
+                if active_training is not None and active_training.get("pause_confirmed", False):
+                    active_training["pause_confirmed"] = False
                 # Check if training was stopped
                 if not active_training or not active_training.get("is_training", False):
-                    await socketio.emit(
+                    _log("Training stopped before epoch completion")
+                    await _emit(
                         "training_stopped", {"message": "Training stopped"}
                     )
+                    if pause_notifier_task:
+                        pause_notifier_task.cancel()
                     return
 
-            print(f"Epoch {t + 1}/{n_epochs}...")
-            await socketio.emit(
+            await _emit(
                 "epoch_started", {"epoch": t + 1, "total_epochs": n_epochs}
             )
+            await _phase(
+                f"Training epoch {t + 1} of {n_epochs}...",
+                "training",
+            )
             # emit is method to send events and data to clients via websocket
-            avg_train_loss, train_avg_acc = self.train(n_epochs, batch_size)
-            print(
-                f"Train Loss: {avg_train_loss:.4f}, Train Accuracy: {train_avg_acc:.2f}%\n"
+            avg_train_loss, train_avg_acc = await asyncio.to_thread(
+                self.train, n_epochs, batch_size, active_training
             )
 
+            # If stop was requested during training, exit ASAP
+            if active_training and not active_training.get("is_training", False):
+                await _emit("training_stopped", {"message": "Training stopped"})
+                if pause_notifier_task:
+                    pause_notifier_task.cancel()
+                return
+
+            await _phase(
+                f"Evaluating epoch {t + 1} on the test set...",
+                "evaluating",
+            )
             if t != n_epochs - 1 or self.input == "pima":
-                test_result = self.test(output_info=False)
+                test_result = await asyncio.to_thread(
+                    self.test, False, active_training
+                )
                 (
                     avg_test_loss,
                     test_avg_acc,
@@ -658,7 +811,9 @@ class Train:
                     overall_metrics,
                 ) = test_result
             else:
-                test_result = self.test(output_info=True)
+                test_result = await asyncio.to_thread(
+                    self.test, True, active_training
+                )
                 if len(test_result) == 7:  # Non-pima dataset with output_info=True
                     (
                         avg_test_loss,
@@ -672,16 +827,20 @@ class Train:
 
                     # Process samples if available
                     if self.input != "pima":
-                        print("----------processing random samples-----------")
+                        await _phase(
+                            "Preparing sample visualizations. This can take a moment...",
+                            "visualizations",
+                        )
+                        _log("Processing random samples")
                         RANDOM_SAMPLES_ENCODED = self.process_image_samples(
                             random_samples,
-                            "cnn_analysis_results",
+                            sample_root,
                             dev_testing=dev_testing,
                         )
-                        print("----------processing misclassified samples-----------")
+                        _log("Processing misclassified samples")
                         MISCLASSIFIED_SAMPLES_ENCODED = self.process_image_samples(
                             misclassified_samples,
-                            "cnn_analysis_results/lowest_accuracy_classes",
+                            os.path.join(sample_root, "lowest_accuracy_classes"),
                             dev_testing=dev_testing,
                         )
                     else:  # Fallback for 5-value return
@@ -693,8 +852,17 @@ class Train:
                             overall_metrics,
                         ) = test_result
 
-            print(
-                f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {test_avg_acc:.2f}%\n"
+            # If stop was requested during eval, exit ASAP
+            if active_training and not active_training.get("is_training", False):
+                await _emit("training_stopped", {"message": "Training stopped"})
+                if pause_notifier_task:
+                    pause_notifier_task.cancel()
+                return
+
+            _log(
+                f"epoch {t + 1}/{n_epochs}  "
+                f"train {avg_train_loss:.4f} ({train_avg_acc:.2f}%)  "
+                f"test {avg_test_loss:.4f} ({test_avg_acc:.2f}%)"
             )
 
             train_losses.append(avg_train_loss)
@@ -720,7 +888,7 @@ class Train:
                 active_training["current_progress"] = progress_data
 
             # Emit epoch progress
-            await socketio.emit("epoch_completed", progress_data)
+            await _emit("epoch_completed", progress_data)
 
         # Calculate final averages
         avg_train_acc = sum(train_accs) / len(train_accs)
@@ -728,7 +896,11 @@ class Train:
         avg_train_loss = sum(train_losses) / len(train_losses)
         avg_test_loss = sum(test_losses) / len(test_losses)
 
-        print("Done!")
+        _log("Training finished")
+        await _phase("Packaging results...", "finishing")
+
+        if pause_notifier_task:
+            pause_notifier_task.cancel()
 
         # Format losses for final result
         train_losses = [{"x": i, "y": v} for i, v in enumerate(train_losses)]
@@ -753,7 +925,7 @@ class Train:
         }
 
         # Emit training completion
-        await socketio.emit(
+        await _emit(
             "training_completed",
             {"final_results": RESULTS, "message": "Training completed successfully!"},
         )

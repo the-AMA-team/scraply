@@ -2,6 +2,7 @@ import { TrainingResult } from "~/types/index";
 import { ResponsiveLine } from "@nivo/line";
 import { useTrainingStore } from "~/state/trainingStore";
 import { useDownloadFile } from "~/hooks/useApi";
+import ModelMiniMap from "./ModelMiniMap";
 
 interface HistoryItemProps {
   idx: number;
@@ -26,49 +27,59 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
 
   const { openHistoryItemIdx, setOpenHistoryItem } = useTrainingStore();
   const { mutate: downloadFile } = useDownloadFile();
+  const lossPoints = (trainingRes.train_losses ?? []).filter(
+    (p) => Number.isFinite(p.x) && Number.isFinite(p.y),
+  );
 
   return (
     <div className="group my-3 overflow-hidden rounded-xl border border-slate-700/50 bg-zinc-900 shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
       {/* Header */}
       <div className="px-5 pb-2 pt-4">
-        <button
-          onClick={() =>
-            setOpenHistoryItem(idx === openHistoryItemIdx ? null : idx)
-          }
-          className="w-full text-left"
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-bold text-slate-100">
-                {trainingRes.run_name || `Training Run ${idx}`}
-              </h3>
-              <p className="text-sm text-slate-400">Run #{idx}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  downloadFile(trainingRes.trainingConfig);
-                }}
-                className="flex items-center gap-2 rounded-lg bg-zinc-700 px-3 py-1.5 text-sm text-zinc-200 transition-colors duration-200 hover:bg-zinc-600"
-                title="Download Python Notebook"
-                aria-label="Download Python Notebook"
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() =>
+              setOpenHistoryItem(idx === openHistoryItemIdx ? null : idx)
+            }
+            className="flex-1 text-left"
+          >
+            <h3 className="text-lg font-bold text-slate-100">
+              {trainingRes.run_name || `Training Run ${idx}`}
+            </h3>
+            <p className="text-sm text-slate-400">Run #{idx}</p>
+          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => downloadFile(trainingRes.trainingConfig)}
+              className="flex items-center gap-2 rounded-lg bg-zinc-700 px-3 py-1.5 text-sm text-zinc-200 transition-colors duration-200 hover:bg-zinc-600"
+              title="Download Python Notebook"
+              aria-label="Download Python Notebook"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <span className="text-sm">Python Notebook</span>
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span className="text-sm">Python Notebook</span>
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setOpenHistoryItem(idx === openHistoryItemIdx ? null : idx)
+              }
+              aria-label={
+                openHistoryItemIdx === idx ? "Collapse run" : "Expand run"
+              }
+            >
               <svg
                 className={`h-5 w-5 text-slate-400 transition-transform duration-200 ${
                   openHistoryItemIdx === idx ? "rotate-180" : ""
@@ -84,9 +95,9 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
                   d="M19 9l-7 7-7-7"
                 />
               </svg>
-            </div>
+            </button>
           </div>
-        </button>
+        </div>
       </div>
 
       {/* Summary Metrics */}
@@ -253,18 +264,19 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
               Loss Graph
             </h3>
             <div className="h-80 rounded-lg bg-zinc-900/50 p-3 ring-1 ring-zinc-700/30">
+              {lossPoints.length >= 2 ? (
               <ResponsiveLine
                 data={[
                   {
                     id: "train_loss",
-                    data: trainingRes.train_losses,
+                    data: lossPoints,
                   },
                 ]}
                 margin={{ top: 20, right: 20, bottom: 50, left: 60 }}
                 enableGridX={false}
                 enableGridY={true}
                 gridYValues={5}
-                xScale={{ type: "point" }}
+                xScale={{ type: "linear", min: 0, max: "auto" }}
                 yScale={{
                   type: "linear",
                   min: "auto",
@@ -341,18 +353,18 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
                   legendOffset: 36,
                   legendPosition: "middle",
                   tickValues:
-                    trainingRes.train_losses.length > 20
+                    lossPoints.length > 20
                       ? Array.from(
                           {
                             length: Math.min(
                               10,
-                              trainingRes.train_losses.length,
+                              lossPoints.length,
                             ),
                           },
                           (_, i) =>
                             Math.floor(
-                              (i * (trainingRes.train_losses.length - 1)) /
-                                (Math.min(10, trainingRes.train_losses.length) -
+                              (i * (lossPoints.length - 1)) /
+                                (Math.min(10, lossPoints.length) -
                                   1),
                             ),
                         )
@@ -372,12 +384,18 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
                 pointBorderColor="#ffffff"
                 pointLabelYOffset={-12}
                 useMesh={true}
-                curve="monotoneX"
+                curve={lossPoints.length >= 3 ? "monotoneX" : "linear"}
                 lineWidth={2}
                 enableArea={true}
                 areaOpacity={0.1}
                 legends={[]}
+                animate={false}
               />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-zinc-500">
+                  Not enough loss data to graph
+                </div>
+              )}
             </div>
           </div>
 
@@ -387,9 +405,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({
               Model Configuration
             </h3>
             <div className="rounded-lg bg-zinc-900/50 p-4 ring-1 ring-zinc-700/30">
-              <pre className="overflow-x-auto font-mono text-xs text-zinc-400">
-                {JSON.stringify(trainingRes.trainingConfig, null, 2)}
-              </pre>
+              <ModelMiniMap trainingConfig={trainingRes.trainingConfig} />
             </div>
           </div>
         </div>

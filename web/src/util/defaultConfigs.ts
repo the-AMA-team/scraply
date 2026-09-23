@@ -2,7 +2,7 @@ import { UILayer } from "~/types/index";
 import { LAYER_BLOCKS } from "./LAYER_BLOCKS";
 
 // Helper to get label and color from LAYER_BLOCKS by label (case-insensitive)
-function getBlockMeta<L extends string>(label: L) {
+export function getBlockMeta<L extends string>(label: L) {
   const block = LAYER_BLOCKS.find(
     (b) => b.label.toLowerCase() === label.toLowerCase(),
   );
@@ -10,6 +10,13 @@ function getBlockMeta<L extends string>(label: L) {
     label: (block?.label || label) as L,
     color: block?.color || "#CCCCCC",
   };
+}
+
+// Helper to get full block definition from LAYER_BLOCKS by label (case-insensitive)
+export function getBlockByLabel(label: string) {
+  return LAYER_BLOCKS.find(
+    (b) => b.label.toLowerCase() === label.toLowerCase(),
+  );
 }
 
 // Default layer configurations for each dataset

@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import pandas as pd
 from collections import Counter
+from pathlib import Path
 
 from torch.utils.data import Dataset
 from torchvision import datasets
@@ -13,58 +14,106 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 
-DATALOADERS = {
-    "alice": {  # dataset for decoder-only transformer, demonstrating text generation
-        "file": "datasets/alice_1.txt"
-    },
-    "shakespeare": {"file": "datasets/shakespeare.txt"},
-    "pima": {
-        "X": pd.read_csv("https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv").iloc[:, :-1].values,
-        "y": pd.read_csv("https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv").iloc[:, -1].values,
-    },
-    "MNIST": {
-        "train": datasets.MNIST(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-        "test": datasets.MNIST(
-            root="data",
-            train=False,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-    },
-    "FashionMNIST": {
-        "train": datasets.FashionMNIST(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-        "test": datasets.FashionMNIST(
-            root="data",
-            train=False,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-    },
-    "CIFAR10": {
-        "train": datasets.CIFAR10(
-            root="data",
-            train=True,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-        "test": datasets.CIFAR10(
-            root="data",
-            train=False,
-            download=True,
-            transform=transforms.Compose([transforms.ToTensor()]),
-        ),
-    },
+_DATA_DIR = Path(__file__).resolve().parent
+_TORCHVISION_ROOT = _DATA_DIR / "data"
+_PIMA_CSV = _DATA_DIR / "datasets" / "pima-indians-diabetes.csv"
+_IMAGE_TRANSFORM = transforms.Compose([transforms.ToTensor()])
+_DATASET_CACHE = {}
+
+DATASET_LABELS = {
+    "pima": "PIMA",
+    "MNIST": "MNIST",
+    "FashionMNIST": "Fashion-MNIST",
+    "CIFAR10": "CIFAR-10",
 }
+
+
+def dataset_label(name: str) -> str:
+    return DATASET_LABELS.get(name, name)
+
+
+def _image_dataset_on_disk(name: str) -> bool:
+    root = _TORCHVISION_ROOT
+    if name == "MNIST":
+        return (root / "MNIST" / "processed" / "training.pt").exists() or (
+            root / "MNIST" / "raw" / "train-images-idx3-ubyte.gz"
+        ).exists()
+    if name == "FashionMNIST":
+        return (root / "FashionMNIST" / "processed" / "training.pt").exists() or (
+            root / "FashionMNIST" / "raw" / "train-images-idx3-ubyte.gz"
+        ).exists()
+    if name == "CIFAR10":
+        return (root / "cifar-10-batches-py" / "data_batch_1").exists() or (
+            root / "cifar-10-python.tar.gz"
+        ).exists()
+    return False
+
+
+def describe_dataset_load(name: str) -> str:
+    label = dataset_label(name)
+    if name in _DATASET_CACHE:
+        return f"{label} is already loaded in memory"
+    if name == "pima":
+        return f"Loading {label} from disk..."
+    if _image_dataset_on_disk(name):
+        return f"Loading {label} from disk..."
+    if name == "CIFAR10":
+        return f"Downloading {label} (~170 MB). The first load can take a few minutes..."
+    return f"Downloading {label}. The first load can take a few minutes..."
+
+
+def describe_dataset_ready(name: str, ds) -> str:
+    label = dataset_label(name)
+    if name == "pima":
+        n = len(ds["X"])
+        return f"{label} loaded ({n:,} samples). Setting up the model..."
+    n_train = len(ds["train"])
+    n_test = len(ds["test"])
+    return (
+        f"{label} loaded ({n_train:,} train / {n_test:,} test). "
+        "Setting up the model..."
+    )
+
+
+def _load_image_dataset(dataset_cls):
+    return {
+        "train": dataset_cls(
+            root=str(_TORCHVISION_ROOT),
+            train=True,
+            download=True,
+            transform=_IMAGE_TRANSFORM,
+        ),
+        "test": dataset_cls(
+            root=str(_TORCHVISION_ROOT),
+            train=False,
+            download=True,
+            transform=_IMAGE_TRANSFORM,
+        ),
+    }
+
+
+def _load_dataset(name: str):
+    if name == "alice":
+        return {"file": str(_DATA_DIR / "datasets" / "alice_1.txt")}
+    if name == "shakespeare":
+        return {"file": str(_DATA_DIR / "datasets" / "shakespeare.txt")}
+    if name == "pima":
+        data = pd.read_csv(_PIMA_CSV, header=None).values
+        return {"X": data[:, :-1], "y": data[:, -1]}
+    if name == "MNIST":
+        return _load_image_dataset(datasets.MNIST)
+    if name == "FashionMNIST":
+        return _load_image_dataset(datasets.FashionMNIST)
+    if name == "CIFAR10":
+        return _load_image_dataset(datasets.CIFAR10)
+    raise KeyError(f"Unknown dataset: {name}")
+
+
+def get_dataloader(name: str):
+    """Load a dataset on first use and reuse it for later training jobs."""
+    if name not in _DATASET_CACHE:
+        _DATASET_CACHE[name] = _load_dataset(name)
+    return _DATASET_CACHE[name]
 
 
 ACTIVATIONS = {

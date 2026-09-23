@@ -1,11 +1,12 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { LossFunction, OptimizerType } from "~/types/index";
-import DATASETS from "~/util/DATASETS";
 import {
   TRAINING_DEFAULTS,
   LOSS_FUNCTIONS,
   OPTIMIZERS,
+  getMaxEpochsForDataset,
+  isImageDataset,
 } from "~/util/trainingConfig";
 import TrainingConfigItem from "./TrainingConfigItem";
 
@@ -17,6 +18,7 @@ interface SharedTrainingConfigProps {
   epochs: number;
   batchSize: number;
   runName: string;
+  selectedDataset?: string;
 
   // Setters
   setLoss: (loss: LossFunction) => void;
@@ -42,6 +44,7 @@ const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
   epochs,
   batchSize,
   runName,
+  selectedDataset,
   setLoss,
   setOptimizer,
   setLearningRate,
@@ -55,6 +58,30 @@ const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
   onResetBatchSize,
   onResetRunName,
 }) => {
+  const maxEpochs = selectedDataset
+    ? getMaxEpochsForDataset(selectedDataset)
+    : TRAINING_DEFAULTS.epochs.max;
+  const [epochsError, setEpochsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEpochsError(null);
+  }, [selectedDataset]);
+
+  const handleEpochsChange = (value: number) => {
+    if (Number.isNaN(value)) return;
+    if (value > maxEpochs) {
+      setEpochsError(
+        selectedDataset && isImageDataset(selectedDataset)
+          ? `Max ${maxEpochs} epochs allowed for image datasets`
+          : `Max ${maxEpochs} epochs allowed`,
+      );
+      setEpochs(maxEpochs);
+      return;
+    }
+    setEpochsError(null);
+    setEpochs(Math.max(value, TRAINING_DEFAULTS.epochs.min));
+  };
+
   return (
     <div className="space-y-3">
       <TrainingConfigItem title="Run Name" onReset={onResetRunName}>
@@ -125,25 +152,34 @@ const SharedTrainingConfig: React.FC<SharedTrainingConfigProps> = ({
       </TrainingConfigItem>
 
       <TrainingConfigItem title="Epochs" onReset={onResetEpochs}>
-        <div className="flex items-center">
-          <input
-            type="range"
-            value={epochs}
-            onChange={(e) => setEpochs(parseInt(e.target.value))}
-            min={TRAINING_DEFAULTS.epochs.min}
-            max={TRAINING_DEFAULTS.epochs.max}
-            className="flex-1"
-            name="epochs"
-          />
-          <input
-            type="number"
-            value={epochs}
-            onChange={(e) => setEpochs(parseInt(e.target.value))}
-            min={TRAINING_DEFAULTS.epochs.min}
-            max={TRAINING_DEFAULTS.epochs.max}
-            className="mx-2 w-20 rounded-lg bg-zinc-700 px-2 py-1 text-center text-base outline-none"
-            name="epochs"
-          />
+        <div className="flex flex-col items-end">
+          <div className="flex items-center">
+            <input
+              type="range"
+              value={Math.min(epochs, maxEpochs)}
+              onChange={(e) => handleEpochsChange(parseInt(e.target.value))}
+              min={TRAINING_DEFAULTS.epochs.min}
+              max={maxEpochs}
+              className="flex-1"
+              name="epochs"
+            />
+            <input
+              type="number"
+              value={epochs}
+              onChange={(e) => handleEpochsChange(parseInt(e.target.value))}
+              min={TRAINING_DEFAULTS.epochs.min}
+              max={maxEpochs}
+              className={`mx-2 w-20 rounded-lg bg-zinc-700 px-2 py-1 text-center text-base outline-none ${
+                epochsError ? "ring-1 ring-red-500" : ""
+              }`}
+              name="epochs"
+            />
+          </div>
+          {epochsError && (
+            <p className="mt-1 max-w-[220px] text-right text-xs text-red-400">
+              {epochsError}
+            </p>
+          )}
         </div>
       </TrainingConfigItem>
 

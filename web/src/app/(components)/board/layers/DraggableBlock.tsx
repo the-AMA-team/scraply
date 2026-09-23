@@ -1,7 +1,6 @@
 "use client";
 import { useDraggable } from "@dnd-kit/core";
-import { PARAM_CONFIG } from "~/util/layerConfig";
-import { hasParams } from "~/types/index";
+import { ParamBadge, getParamConfig } from "~/util/blockRenderUtils";
 
 interface DraggableBlockProps {
   id: string;
@@ -45,18 +44,14 @@ const DraggableBlock = ({ id, label, color, params }: DraggableBlockProps) => {
               ([key]) => key !== "inputNeurons" && key !== "outputNeurons",
             )
             .map(([key, value]) => {
-              const config = PARAM_CONFIG[key] || { shortLabel: key };
-              // Format dimension values as "1D" or "2D"
-              const displayValue = key === "dimension" ? `${value}D` : value;
+              const config = getParamConfig(key);
               return (
                 <div
                   key={key}
                   className="group relative"
-                  title={`${config.shortLabel}: ${displayValue}`}
+                  title={`${config.shortLabel}: ${value}`}
                 >
-                  <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-xs text-white">
-                    {displayValue}
-                  </span>
+                  <ParamBadge paramKey={key} value={value} />
                   {/* Show parameter name on hover */}
                   <span className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 translate-y-12 whitespace-nowrap rounded bg-gray-800 px-2 py-0.5 text-xs text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     {config.shortLabel}

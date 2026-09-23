@@ -1,7 +1,6 @@
 {
   "env": {
-    "NEXT_PUBLIC_API_URL": "https://5985635811ab.ngrok-free.app",
-    "NEXT_PUBLIC_SOCKET_URL": "https://5985635811ab.ngrok-free.app"
+    "TEMPTEST": "temptest"
   },
   "headers": [
     {
@@ -23,3 +22,4 @@
     }
   ]
 }
+

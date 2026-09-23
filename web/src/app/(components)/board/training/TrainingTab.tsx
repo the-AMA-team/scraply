@@ -8,12 +8,14 @@ import { useStartTraining } from "~/hooks/useApi";
 import { useSocket } from "~/hooks/useSocket";
 import { useBoardStore } from "~/state/boardStore";
 import { useTrainingStore } from "~/state/trainingStore";
-import { DEFAULT_TRAINING_CONFIG } from "~/util/trainingConfig";
+import {
+  getEpochsLimitError,
+  getTrainingDefaultsForDataset,
+} from "~/util/trainingConfig";
 
 import SharedTrainingConfig from "./SharedTrainingConfig";
 import HistoryItem from "./HistoryItem";
-import posthog from "posthog-js";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Config } from "~/types/index";
 
 interface TrainingTabProps {
@@ -26,13 +28,16 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
 
   // Store the training config that was used when training started
   const trainingConfigRef = useRef<Config | null>(null);
+  const hadSocketTrainingRef = useRef(false);
 
   // Socket for live training
   const {
     isConnected,
     trainingProgress,
+    trainingPhase,
     isTrainingActive,
     isTrainingPaused: socketTrainingPaused,
+    isTrainingPausing,
     trainingCompleted,
     trainingError,
     startTraining: startSocketTraining,
@@ -78,6 +83,26 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     setIsTrainingPaused,
   } = useTrainingStore();
 
+  const [configError, setConfigError] = useState<string | null>(null);
+
+  // Apply dataset-specific training defaults when dataset changes
+  useEffect(() => {
+    const defaults = getTrainingDefaultsForDataset(selectedDataset);
+    setLoss(defaults.loss);
+    setOptimizer(defaults.optimizer);
+    setLearningRate(defaults.learningRate);
+    setEpochs(defaults.epochs);
+    setBatchSize(defaults.batchSize);
+    setConfigError(null);
+  }, [
+    selectedDataset,
+    setLoss,
+    setOptimizer,
+    setLearningRate,
+    setEpochs,
+    setBatchSize,
+  ]);
+
   // Handle live training progress updates
   useEffect(() => {
     if (trainingProgress) {
@@ -90,10 +115,24 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
     setIsTrainingPaused(socketTrainingPaused);
   }, [socketTrainingPaused, setIsTrainingPaused]);
 
-  // Handle training stop events
+  // Handle training stop events - only clear live UI after the socket
+  // actually started a job and then ended it. Otherwise the first-load
+  // wait (dataset download) looks like "training stopped".
   useEffect(() => {
-    if (!isTrainingActive && isLiveTraining) {
-      // Training was stopped from backend
+    if (isTrainingActive) {
+      hadSocketTrainingRef.current = true;
+      setIsLiveTraining(true);
+    }
+  }, [isTrainingActive, setIsLiveTraining]);
+
+  useEffect(() => {
+    if (
+      hadSocketTrainingRef.current &&
+      !isTrainingActive &&
+      isLiveTraining &&
+      isConnected
+    ) {
+      hadSocketTrainingRef.current = false;
       setIsLiveTraining(false);
       setIsTraining(false);
       setIsTrainingPaused(false);
@@ -102,6 +141,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
   }, [
     isTrainingActive,
     isLiveTraining,
+    isConnected,
     setIsLiveTraining,
     setIsTraining,
     setIsTrainingPaused,
@@ -118,23 +158,6 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
       return () => clearTimeout(timer);
     }
   }, [isConnected, checkTrainingStatus]);
-
-  // Only update live training state when socket actually changes state
-  // Don't override stored state on initial mount
-  useEffect(() => {
-    // If socket reports training is active, definitely set it
-    if (isTrainingActive) {
-      setIsLiveTraining(true);
-    }
-    // Only set to false if we were previously live training and socket explicitly says not active
-    else if (isLiveTraining && !isTrainingActive && isConnected) {
-      // Wait a moment to ensure this isn't just a reconnection
-      const timer = setTimeout(() => {
-        setIsLiveTraining(false);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [isTrainingActive, isLiveTraining, isConnected, setIsLiveTraining]);
 
   // Handle training errors
   useEffect(() => {
@@ -183,7 +206,16 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
   ]);
 
   const handleTrain = async () => {
+    const epochsError = getEpochsLimitError(selectedDataset, epochs);
+    if (epochsError) {
+      setConfigError(epochsError);
+      return;
+    }
+    setConfigError(null);
+
     setIsTraining(true);
+    setIsLiveTraining(true); // Set live training state immediately
+    hadSocketTrainingRef.current = false;
     resetTraining(); // Reset any previous socket training state
 
     try {
@@ -200,14 +232,12 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
 
       trainingConfigRef.current = config; // Store the config
 
-      posthog.capture("train_started", { config });
-
       // Use socket-based live training
       await startSocketTraining(config);
     } catch (error) {
       console.error("Training failed:", error);
-      posthog.captureException(error);
       setIsTraining(false);
+      setIsLiveTraining(false); // Ensure live training is reset on error
     }
   };
 
@@ -222,6 +252,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
   const handleStopTraining = () => {
     stopTraining();
 
+    hadSocketTrainingRef.current = false;
     setIsTraining(false);
     setIsLiveTraining(false);
     setIsTrainingPaused(false);
@@ -231,6 +262,10 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
 
   const isTrainingInProgress =
     isTraining || startTrainingMutation.isPending || isLiveTraining;
+
+  const liveLossPoints = (currentProgress?.train_losses ?? []).filter(
+    (p) => Number.isFinite(p.x) && Number.isFinite(p.y),
+  );
 
   return (
     <div className="h-full p-3">
@@ -264,14 +299,24 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
             {/* Pause/Resume Button - Only show during training */}
             {isLiveTraining && (
               <button
+                disabled={isTrainingPausing && !liveTrainingPaused}
                 className={`flex items-center space-x-2 rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200 hover:shadow-md active:scale-95 ${
+                  isTrainingPausing && !liveTrainingPaused
+                    ? "cursor-not-allowed bg-zinc-800 text-zinc-500 shadow-none"
+                    : ""
+                } ${
                   liveTrainingPaused
                     ? "bg-green-600 text-white hover:bg-green-700"
                     : "bg-amber-500 text-white hover:bg-amber-600"
                 }`}
                 onClick={handlePauseResume}
               >
-                {liveTrainingPaused ? (
+                {isTrainingPausing && !liveTrainingPaused ? (
+                  <>
+                    <SpinnerIcon className="h-4 w-4 animate-spin" />
+                    <span>Pausing...</span>
+                  </>
+                ) : liveTrainingPaused ? (
                   <>
                     <FaPlay className="h-4 w-4" />
                     <span>Resume</span>
@@ -314,29 +359,44 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
               epochs={epochs}
               batchSize={batchSize}
               runName={runName}
+              selectedDataset={selectedDataset}
               setLoss={setLoss}
               setOptimizer={setOptimizer}
               setLearningRate={setLearningRate}
               setEpochs={setEpochs}
               setBatchSize={setBatchSize}
               setRunName={setRunName}
-              onResetLoss={() => setLoss(DEFAULT_TRAINING_CONFIG.loss)}
+              onResetLoss={() =>
+                setLoss(getTrainingDefaultsForDataset(selectedDataset).loss)
+              }
               onResetOptimizer={() =>
-                setOptimizer(DEFAULT_TRAINING_CONFIG.optimizer)
+                setOptimizer(
+                  getTrainingDefaultsForDataset(selectedDataset).optimizer,
+                )
               }
               onResetLearningRate={() =>
-                setLearningRate(DEFAULT_TRAINING_CONFIG.learningRate)
+                setLearningRate(
+                  getTrainingDefaultsForDataset(selectedDataset).learningRate,
+                )
               }
-              onResetEpochs={() => setEpochs(DEFAULT_TRAINING_CONFIG.epochs)}
+              onResetEpochs={() =>
+                setEpochs(getTrainingDefaultsForDataset(selectedDataset).epochs)
+              }
               onResetBatchSize={() =>
-                setBatchSize(DEFAULT_TRAINING_CONFIG.batchSize)
+                setBatchSize(
+                  getTrainingDefaultsForDataset(selectedDataset).batchSize,
+                )
               }
-              onResetRunName={() => setRunName(DEFAULT_TRAINING_CONFIG.runName)}
+              onResetRunName={() =>
+                setRunName(
+                  getTrainingDefaultsForDataset(selectedDataset).runName,
+                )
+              }
             />
           </div>
 
           {/* Error Display */}
-          {(startTrainingMutation.error || trainingError) && (
+          {(configError || startTrainingMutation.error || trainingError) && (
             <div className="rounded-lg border border-red-800 bg-red-950 p-3">
               <div className="flex items-start space-x-2">
                 <div className="flex-shrink-0">
@@ -346,10 +406,17 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                 </div>
                 <div>
                   <h3 className="text-xs font-medium text-red-200">
-                    Training Failed
+                    {configError
+                      ? "Invalid Configuration"
+                      : typeof trainingError === "string" &&
+                          trainingError.toLowerCase().includes("too many users")
+                        ? "Server Busy"
+                        : "Training Failed"}
                   </h3>
                   <p className="mt-1 text-xs text-red-300">
-                    {trainingError || String(startTrainingMutation.error)}
+                    {configError ||
+                      trainingError ||
+                      String(startTrainingMutation.error)}
                   </p>
                 </div>
               </div>
@@ -400,10 +467,29 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                         </div>
                         <div>
                           <span className="text-sm font-semibold text-blue-100">
-                            {liveTrainingPaused
-                              ? "Training Paused"
-                              : "Training in Progress"}
+                            {isTrainingPausing && !liveTrainingPaused
+                              ? "Pausing..."
+                              : liveTrainingPaused
+                                ? "Training Paused"
+                                : currentProgress
+                                  ? "Training in Progress"
+                                  : trainingPhase?.stage === "loading_dataset"
+                                    ? "Loading Dataset"
+                                    : trainingPhase?.stage === "setup"
+                                      ? "Setting Up"
+                                      : "Starting Training"}
                           </span>
+                          {trainingPhase?.message ? (
+                            <div className="mt-0.5 text-xs font-medium text-blue-300/80">
+                              {trainingPhase.message}
+                            </div>
+                          ) : (
+                            !currentProgress && (
+                              <div className="mt-0.5 text-xs font-medium text-blue-300/80">
+                                Preparing your training run...
+                              </div>
+                            )
+                          )}
                           {currentProgress && (
                             <div className="mt-0.5 text-xs font-medium text-blue-300/80">
                               Epoch {currentProgress.epoch} of{" "}
@@ -429,6 +515,14 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                       )}
                     </div>
 
+                    {!currentProgress && (
+                      <div className="mb-1">
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-blue-950/50 shadow-inner">
+                          <div className="h-full w-1/2 animate-pulse rounded-full bg-blue-500/80" />
+                        </div>
+                      </div>
+                    )}
+
                     {currentProgress && (
                       <>
                         {/* Overall Progress Bar */}
@@ -442,8 +536,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                         </div>
 
                         {/* Live Loss Graph */}
-                        {currentProgress.train_losses &&
-                          currentProgress.train_losses.length > 0 && (
+                        {liveLossPoints.length >= 2 && (
                             <div className="mb-6 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
                               <h4 className="mb-3 text-sm font-medium text-blue-200/90">
                                 Training Loss Progress
@@ -453,7 +546,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                                   data={[
                                     {
                                       id: "train_loss",
-                                      data: currentProgress.train_losses,
+                                      data: liveLossPoints,
                                     },
                                   ]}
                                   margin={{
@@ -465,7 +558,7 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                                   enableGridX={false}
                                   enableGridY={true}
                                   gridYValues={3}
-                                  xScale={{ type: "point" }}
+                                  xScale={{ type: "linear", min: 0, max: "auto" }}
                                   yScale={{
                                     type: "linear",
                                     min: 0,
@@ -542,25 +635,21 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                                     legendOffset: 25,
                                     legendPosition: "middle",
                                     tickValues:
-                                      currentProgress.train_losses.length > 15
+                                      liveLossPoints.length > 15
                                         ? Array.from(
                                             {
                                               length: Math.min(
                                                 8,
-                                                currentProgress.train_losses
-                                                  .length,
+                                                liveLossPoints.length,
                                               ),
                                             },
                                             (_, i) =>
                                               Math.floor(
                                                 (i *
-                                                  (currentProgress.train_losses
-                                                    .length -
-                                                    1)) /
+                                                  (liveLossPoints.length - 1)) /
                                                   (Math.min(
                                                     8,
-                                                    currentProgress.train_losses
-                                                      .length,
+                                                    liveLossPoints.length,
                                                   ) -
                                                     1),
                                               ),
@@ -581,13 +670,16 @@ const TrainingTab: React.FC<TrainingTabProps> = ({ selectedDataset }) => {
                                   pointBorderColor="#ffffff"
                                   pointLabelYOffset={-12}
                                   useMesh={true}
-                                  curve="monotoneX"
+                                  curve={
+                                    liveLossPoints.length >= 3
+                                      ? "monotoneX"
+                                      : "linear"
+                                  }
                                   lineWidth={2}
                                   enableArea={true}
                                   areaOpacity={0.15}
                                   legends={[]}
-                                  animate={true}
-                                  motionConfig="gentle"
+                                  animate={false}
                                 />
                               </div>
                             </div>
