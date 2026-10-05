@@ -29,8 +29,6 @@ Some cool PEEK maps from the CIFAR10 image dataset:
 
 ### Running locally:
 
-The scraply server isn't deployed yet, therefore you need to run your own backend! We are working on cost-effective and possible funding/sponsor options to allow users to train their Scraply models for free :) 
-
 1. visit [scraply](https://scraply-prod.vercel.app) (server status shows offline)
 2. clone github repo `git clone https://github.com/the-AMA-team/scraply.git`
 3. go to the api directory `cd scraply/dynamic-model-api/`
